@@ -40,10 +40,7 @@ class Projectile {
             this.y += dy;
             this.distanceTraveled += this.speed;
             
-            // Debug: Log projectile position
-            if (this.owner === 'player') {
-                console.log(`Projectile position: (${this.x.toFixed(2)}, ${this.y.toFixed(2)})`);
-            }
+
             
             // Update trail
             this.trail.push({ x: this.x, y: this.y });
@@ -259,10 +256,6 @@ class FireCard extends Card {
     execute(tank, game) {
         const weapon = tank.equipment.weapon;
         
-        console.log('FireCard execute - weapon:', weapon);
-        console.log('Weapon canDestroyWalls:', weapon.canDestroyWalls);
-        console.log('Weapon damage:', weapon.damage);
-        
         // Calculate the position one square ahead of the tank in the cannon direction
         const startX = tank.x + Math.cos(tank.angle * Math.PI / 180);
         const startY = tank.y + Math.sin(tank.angle * Math.PI / 180);
@@ -276,22 +269,13 @@ class FireCard extends Card {
             tank.owner
         );
         
-        console.log('Projectile canDestroyWalls before weapon copy:', projectile.canDestroyWalls);
-        
         // Copy weapon properties
         projectile.canDestroyWalls = weapon.canDestroyWalls || false;
         projectile.canShootOverWalls = weapon.canShootOverWalls || false;
         
-        console.log('Projectile canDestroyWalls after weapon copy:', projectile.canDestroyWalls);
-        
         // Pass maze reference to projectile
         projectile.maze = game.maze;
         
-        console.log('=== PROJECTILE CREATED ===');
-        console.log('Projectile created at:', startX, startY);
-        console.log('Projectile angle:', tank.angle);
-        console.log('Projectile canDestroyWalls:', projectile.canDestroyWalls);
-        console.log('Projectile damage:', projectile.damage);
         game.projectiles.push(projectile);
     }
 }

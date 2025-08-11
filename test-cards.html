@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Card Execution Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { margin: 5px; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>Card Execution Test</h1>
+    
+    <div class="test-section">
+        <h2>Card Structure Tests</h2>
+        <button onclick="testCardStructure()">Test Card Structure</button>
+        <div id="card-structure-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Card Execution Tests</h2>
+        <button onclick="testCardExecution()">Test Card Execution</button>
+        <div id="card-execution-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Teleport Card Tests</h2>
+        <button onclick="testTeleportCard()">Test Teleport Card</button>
+        <div id="teleport-results"></div>
+    </div>
+
+    <script>
+        // Mock game objects for testing
+        class MockTank {
+            constructor(x, y, angle, owner) {
+                this.x = x;
+                this.y = y;
+                this.angle = angle;
+                this.owner = owner;
+                this.targetX = x;
+                this.targetY = y;
+                this.targetAngle = angle;
+                this.equipment = { weapon: { damage: 1, range: 5 } };
+            }
+            
+            moveTo(x, y) {
+                console.log(`${this.owner} tank moving to ${x}, ${y}`);
+                this.targetX = x;
+                this.targetY = y;
+            }
+            
+            rotateTo(angle) {
+                console.log(`${this.owner} tank rotating to ${angle}`);
+                this.targetAngle = angle;
+            }
+        }
+        
+        class MockMaze {
+            constructor(width, height) {
+                this.width = width;
+                this.height = height;
+            }
+            
+            isValidPosition(x, y) {
+                return x >= 0 && x < this.width && y >= 0 && y < this.height;
+            }
+            
+            isWall(x, y) {
+                return false; // No walls for testing
+            }
+        }
+        
+        // Test functions
+        function testCardStructure() {
+            const results = document.getElementById('card-structure-results');
+            results.innerHTML = '';
+            
+            const testCards = [
+                { type: 'move', direction: 'forward', steps: 1, name: 'Move Forward 1', id: 0 },
+                { type: 'turn', direction: 'left', name: 'Turn Left', id: 1 },
+                { type: 'fire', name: 'Fire Weapon', id: 2 },
+                { type: 'teleport', name: 'Teleport', id: 3 }
+            ];
+            
+            let success = true;
+            testCards.forEach(card => {
+                const hasType = card.hasOwnProperty('type');
+                const hasName = card.hasOwnProperty('name');
+                const hasId = card.hasOwnProperty('id');
+                
+                if (!hasType || !hasName || !hasId) {
+                    success = false;
+                    results.innerHTML += `<div class="error">❌ Card ${card.name} missing required properties</div>`;
+                } else {
+                    results.innerHTML += `<div class="success">✅ Card ${card.name} structure valid</div>`;
+                }
+            });
+            
+            if (success) {
+                results.innerHTML += `<div class="success">🎉 All card structures are valid!</div>`;
+            }
+        }
+        
+        function testCardExecution() {
+            const results = document.getElementById('card-execution-results');
+            results.innerHTML = '';
+            
+            const maze = new MockMaze(10, 10);
+            const playerTank = new MockTank(1, 1, 0, 'player');
+            const aiTank = new MockTank(8, 8, 180, 'ai');
+            
+            const testCards = [
+                { type: 'move', direction: 'forward', steps: 1, name: 'Move Forward 1' },
+                { type: 'turn', direction: 'left', name: 'Turn Left' },
+                { type: 'fire', name: 'Fire Weapon' }
+            ];
+            
+            let success = true;
+            testCards.forEach(card => {
+                try {
+                    executeCard(playerTank, card, maze);
+                    results.innerHTML += `<div class="success">✅ ${card.name} executed successfully</div>`;
+                } catch (error) {
+                    success = false;
+                    results.innerHTML += `<div class="error">❌ ${card.name} failed: ${error.message}</div>`;
+                }
+            });
+            
+            if (success) {
+                results.innerHTML += `<div class="success">🎉 All basic cards execute correctly!</div>`;
+            }
+        }
+        
+        function testTeleportCard() {
+            const results = document.getElementById('teleport-results');
+            results.innerHTML = '';
+            
+            const maze = new MockMaze(10, 10);
+            const playerTank = new MockTank(1, 1, 0, 'player');
+            const aiTank = new MockTank(8, 8, 180, 'ai');
+            
+            const teleportCard = { type: 'teleport', name: 'Teleport' };
+            
+            try {
+                executeTeleport(playerTank, aiTank, maze);
+                results.innerHTML += `<div class="success">✅ Teleport executed successfully</div>`;
+                results.innerHTML += `<div class="info">Player tank position: ${playerTank.x}, ${playerTank.y}</div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Teleport failed: ${error.message}</div>`;
+            }
+        }
+        
+        // Mock execution functions (copied from game logic)
+        function executeCard(tank, card, maze) {
+            switch (card.type) {
+                case 'move':
+                    executeMove(tank, card, maze);
+                    break;
+                case 'turn':
+                    applyTankTurn(tank, card);
+                    break;
+                case 'fire':
+                    executeFire(tank);
+                    break;
+                case 'teleport':
+                    executeTeleport(tank, null, maze);
+                    break;
+                default:
+                    throw new Error(`Unknown card type: ${card.type}`);
+            }
+        }
+        
+        function executeMove(tank, card, maze) {
+            const steps = card.steps;
+            const direction = card.direction === 'forward' ? 1 : -1;
+            
+            let finalX = tank.x;
+            let finalY = tank.y;
+            
+            for (let i = 0; i < steps; i++) {
+                const newX = finalX + Math.cos(tank.angle * Math.PI / 180) * direction;
+                const newY = finalY + Math.sin(tank.angle * Math.PI / 180) * direction;
+                
+                if (maze.isValidPosition(newX, newY)) {
+                    finalX = newX;
+                    finalY = newY;
+                } else {
+                    break;
+                }
+            }
+            
+            tank.moveTo(finalX, finalY);
+        }
+        
+        function applyTankTurn(tank, card) {
+            const angleChange = card.direction === 'left' ? -90 : 90;
+            let newAngle = (tank.angle + angleChange) % 360;
+            if (newAngle < 0) newAngle += 360;
+            tank.rotateTo(newAngle);
+        }
+        
+        function executeFire(tank) {
+            console.log(`${tank.owner} tank firing weapon`);
+        }
+        
+        function executeTeleport(tank, aiTank, maze) {
+            if (tank.owner === 'player' && aiTank) {
+                const validPositions = findValidTeleportPositions(aiTank, tank, maze);
+                
+                if (validPositions.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * validPositions.length);
+                    const targetPosition = validPositions[randomIndex];
+                    
+                    tank.x = targetPosition.x;
+                    tank.y = targetPosition.y;
+                    tank.targetX = targetPosition.x;
+                    tank.targetY = targetPosition.y;
+                }
+            }
+        }
+        
+        function findValidTeleportPositions(aiTank, playerTank, maze) {
+            const validPositions = [];
+            
+            for (let dx = -2; dx <= 2; dx++) {
+                for (let dy = -2; dy <= 2; dy++) {
+                    if (Math.abs(dx) + Math.abs(dy) === 2) {
+                        const teleportX = aiTank.x + dx;
+                        const teleportY = aiTank.y + dy;
+                        
+                        if (teleportX >= 0 && teleportX < maze.width && 
+                            teleportY >= 0 && teleportY < maze.height &&
+                            maze.isValidPosition(teleportX, teleportY)) {
+                            
+                            const playerGridX = Math.floor(playerTank.x);
+                            const playerGridY = Math.floor(playerTank.y);
+                            
+                            if (teleportX !== playerGridX || teleportY !== playerGridY) {
+                                validPositions.push({ x: teleportX + 0.5, y: teleportY + 0.5 });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return validPositions;
+        }
+    </script>
+</body>
+</html>

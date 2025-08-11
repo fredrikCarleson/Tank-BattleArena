@@ -18,7 +18,46 @@
         </header>
         
         <div id="game-area">
-            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <div id="game-canvas-container">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+                
+                <!-- Arcade-style Game Status Overlay -->
+                <div id="game-status-overlay">
+                    <div class="status-top-bar">
+                        <div class="status-section">
+                            <div class="status-label">PLAYER</div>
+                            <div class="health-display">
+                                <div class="health-bar">
+                                    <div class="health-fill" id="player-health-fill"></div>
+                                </div>
+                                <span class="health-text" id="player-health-text">3/3</span>
+                            </div>
+                        </div>
+                        
+                        <div class="status-section center">
+                            <div class="status-label">TURN</div>
+                            <div class="turn-display" id="turn-display">1/50</div>
+                        </div>
+                        
+                        <div class="status-section">
+                            <div class="status-label">ENEMY</div>
+                            <div class="health-display">
+                                <div class="health-bar">
+                                    <div class="health-fill" id="enemy-health-fill"></div>
+                                </div>
+                                <span class="health-text" id="enemy-health-text">3/3</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-bottom-bar">
+                        <div class="phase-display">
+                            <span class="phase-label">PHASE:</span>
+                            <span class="phase-value" id="phase-display">PLANNING</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div id="ui-panel">
                 <div id="card-area">

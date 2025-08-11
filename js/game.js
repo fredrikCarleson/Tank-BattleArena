@@ -649,11 +649,6 @@ class Game {
     }
     
     update(deltaTime) {
-        // Debug: Show number of projectiles
-        if (this.projectiles.length > 0) {
-            console.log(`Active projectiles: ${this.projectiles.length}`);
-        }
-        
         // Update projectiles - iterate backwards to avoid index issues when removing
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const projectile = this.projectiles[i];
@@ -662,56 +657,18 @@ class Game {
             let shouldRemove = false;
             
             // Check collision with walls FIRST (before tank collision)
-            console.log('Checking wall collision at:', projectile.x, projectile.y, 'Grid:', Math.floor(projectile.x), Math.floor(projectile.y));
-            
-            // Debug: Show grid values around projectile
-            const gridX = Math.floor(projectile.x);
-            const gridY = Math.floor(projectile.y);
-            console.log('Grid values around projectile:');
-            for (let dy = -1; dy <= 1; dy++) {
-                let row = '';
-                for (let dx = -1; dx <= 1; dx++) {
-                    const x = gridX + dx;
-                    const y = gridY + dy;
-                    if (x >= 0 && x < this.maze.width && y >= 0 && y < this.maze.height) {
-                        row += this.maze.grid[y][x] + ' ';
-                    } else {
-                        row += 'X ';
-                    }
-                }
-                console.log(row);
-            }
-            
             if (this.maze.isWall(projectile.x, projectile.y)) {
-                console.log('=== WALL COLLISION DETECTED ===');
-                console.log('Projectile hit wall at:', projectile.x, projectile.y);
-                console.log('Grid coordinates:', Math.floor(projectile.x), Math.floor(projectile.y));
-                console.log('Projectile can destroy walls:', projectile.canDestroyWalls);
-                console.log('Projectile damage:', projectile.damage);
-                console.log('Projectile owner:', projectile.owner);
-                console.log('Wall value at collision:', this.maze.grid[Math.floor(projectile.y)][Math.floor(projectile.x)]);
                 this.createExplosion(projectile.x, projectile.y);
                 
                 // Destroy wall if projectile can do so
                 if (projectile.canDestroyWalls) {
-                    console.log('=== DESTROYING WALL ===');
-                    console.log('Destroying wall at:', projectile.x, projectile.y);
-                    console.log('Grid coordinates:', Math.floor(projectile.x), Math.floor(projectile.y));
-                    console.log('Wall value before destruction:', this.maze.grid[Math.floor(projectile.y)][Math.floor(projectile.x)]);
                     this.maze.destroyWall(projectile.x, projectile.y);
-                    console.log('Wall value after destruction:', this.maze.grid[Math.floor(projectile.y)][Math.floor(projectile.x)]);
-                    console.log('Is wall still there?', this.maze.isWall(projectile.x, projectile.y));
                     
                     // Award points for destroying wall (only if player fired)
                     if (projectile.owner === 'player') {
-                        console.log('Awarding 50 points for destroying wall');
-                        console.log('Points before:', this.points);
                         this.points += 50;
-                        console.log('Points after:', this.points);
                         this.updateUI();
                     }
-                } else {
-                    console.log('Projectile cannot destroy walls');
                 }
                 shouldRemove = true;
             }
@@ -802,17 +759,10 @@ class Game {
     }
     
     renderUI() {
-        // Render tank health bars
-        this.renderHealthBar(this.playerTank, 10, 10, 'Player');
-        this.renderHealthBar(this.aiTank, 10, 40, 'Enemy');
+        // Update status display
+        this.updateStatusDisplay();
         
-        // Render turn info
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = '16px monospace';
-        this.ctx.fillText(`Turn: ${this.turnNumber + 1}/${this.maxTurns}`, 10, 70);
-        this.ctx.fillText(`Phase: ${this.turnPhase}`, 10, 90);
-        
-        // Render current card execution
+        // Render current card execution on canvas
         if (this.currentCardDisplay && this.cardDisplayTimer > 0) {
             this.ctx.fillStyle = '#ffff00';
             this.ctx.font = 'bold 20px monospace';
@@ -825,28 +775,46 @@ class Game {
         }
     }
     
-    renderHealthBar(tank, x, y, label) {
-        const barWidth = 200;
-        const barHeight = 20;
-        const healthPercent = tank.health / tank.maxHealth;
+    updateStatusDisplay() {
+        // Update health bars
+        if (this.playerTank) {
+            const playerHealthPercent = (this.playerTank.health / this.playerTank.maxHealth) * 100;
+            document.getElementById('player-health-fill').style.width = `${playerHealthPercent}%`;
+            document.getElementById('player-health-text').textContent = `${this.playerTank.health}/${this.playerTank.maxHealth}`;
+            
+            // Update health bar color based on health percentage
+            const playerHealthFill = document.getElementById('player-health-fill');
+            if (playerHealthPercent > 66) {
+                playerHealthFill.style.background = 'linear-gradient(90deg, #44ff44, #44ff44)';
+            } else if (playerHealthPercent > 33) {
+                playerHealthFill.style.background = 'linear-gradient(90deg, #ffff44, #ffff44)';
+            } else {
+                playerHealthFill.style.background = 'linear-gradient(90deg, #ff4444, #ff4444)';
+            }
+        }
         
-        // Background
-        this.ctx.fillStyle = '#333';
-        this.ctx.fillRect(x, y, barWidth, barHeight);
+        if (this.aiTank) {
+            const enemyHealthPercent = (this.aiTank.health / this.aiTank.maxHealth) * 100;
+            document.getElementById('enemy-health-fill').style.width = `${enemyHealthPercent}%`;
+            document.getElementById('enemy-health-text').textContent = `${this.aiTank.health}/${this.aiTank.maxHealth}`;
+            
+            // Update health bar color based on health percentage
+            const enemyHealthFill = document.getElementById('enemy-health-fill');
+            if (enemyHealthPercent > 66) {
+                enemyHealthFill.style.background = 'linear-gradient(90deg, #44ff44, #44ff44)';
+            } else if (enemyHealthPercent > 33) {
+                enemyHealthFill.style.background = 'linear-gradient(90deg, #ffff44, #ffff44)';
+            } else {
+                enemyHealthFill.style.background = 'linear-gradient(90deg, #ff4444, #ff4444)';
+            }
+        }
         
-        // Health bar
-        this.ctx.fillStyle = healthPercent > 0.5 ? '#0f0' : healthPercent > 0.25 ? '#ff0' : '#f00';
-        this.ctx.fillRect(x, y, barWidth * healthPercent, barHeight);
-        
-        // Border
-        this.ctx.strokeStyle = '#fff';
-        this.ctx.strokeRect(x, y, barWidth, barHeight);
-        
-        // Text
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = '12px monospace';
-        this.ctx.fillText(`${label}: ${tank.health}/${tank.maxHealth}`, x, y + 15);
+        // Update turn and phase info
+        document.getElementById('turn-display').textContent = `${this.turnNumber + 1}/${this.maxTurns}`;
+        document.getElementById('phase-display').textContent = this.turnPhase.charAt(0).toUpperCase() + this.turnPhase.slice(1);
     }
+    
+
     
     showMainMenu() {
         this.gameState = 'menu';

@@ -116,18 +116,8 @@ class Maze {
         const gridX = Math.floor(x);
         const gridY = Math.floor(y);
         
-        console.log('=== MAZE DESTROY WALL ===');
-        console.log('Input coordinates:', x, y);
-        console.log('Grid coordinates:', gridX, gridY);
-        console.log('Maze dimensions:', this.width, 'x', this.height);
-        console.log('Wall value before:', this.grid[gridY][gridX]);
-        
         if (gridX >= 0 && gridX < this.width && gridY >= 0 && gridY < this.height) {
             this.grid[gridY][gridX] = 0;
-            console.log('Wall destroyed successfully');
-            console.log('Wall value after:', this.grid[gridY][gridX]);
-        } else {
-            console.log('Coordinates out of bounds, cannot destroy wall');
         }
     }
     
