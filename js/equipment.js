@@ -17,7 +17,7 @@ class Equipment {
                 accuracy: 0.9,
                 fireRate: 1,
                 canShootOverWalls: false,
-                canDestroyWalls: false,
+                canDestroyWalls: true,
                 projectileSpeed: 0.3,
                 type: 'weapon'
             },

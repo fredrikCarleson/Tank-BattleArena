@@ -16,7 +16,8 @@ class Tank {
                 name: 'Basic Cannon',
                 damage: 1,
                 range: 5,
-                canShootOverWalls: false
+                canShootOverWalls: false,
+                canDestroyWalls: true
             },
             armor: null
         };
@@ -36,6 +37,9 @@ class Tank {
         // Status effects
         this.stunned = false;
         this.stunDuration = 0;
+        
+        // Teleport flag
+        this.isTeleporting = false;
     }
     
     update(deltaTime) {
@@ -47,6 +51,11 @@ class Tank {
     }
     
     updateMovement(deltaTime) {
+        // Skip movement if teleporting
+        if (this.isTeleporting) {
+            return;
+        }
+        
         // Smooth movement towards target
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
@@ -58,6 +67,10 @@ class Tank {
             
             this.x += dx * moveRatio;
             this.y += dy * moveRatio;
+        } else {
+            // Snap to target if very close to avoid floating point issues
+            this.x = this.targetX;
+            this.y = this.targetY;
         }
         
         // Smooth rotation towards target

@@ -127,6 +127,11 @@ class Game {
         this.playerTank = new Tank(playerStart.x, playerStart.y, 0, 'player', this.maze);
         this.aiTank = new Tank(aiStart.x, aiStart.y, 180, 'ai', this.maze);
         
+        // Equip tanks with proper weapons from Equipment system
+        const equipment = new Equipment();
+        this.playerTank.equipWeapon(equipment.getWeapon('basicCannon'));
+        this.aiTank.equipWeapon(equipment.getWeapon('basicCannon'));
+        
         // Clear projectiles and explosions
         this.projectiles = [];
         this.explosions = [];
@@ -146,27 +151,27 @@ class Game {
     }
     
     generateRandomCards(count) {
-        const cardTypes = [
-            { type: 'move', direction: 'forward', steps: 1, name: 'Move Forward 1' },
-            { type: 'move', direction: 'forward', steps: 2, name: 'Move Forward 2' },
-            { type: 'move', direction: 'backward', steps: 1, name: 'Move Backward 1' },
-            { type: 'turn', direction: 'left', name: 'Turn Left' },
-            { type: 'turn', direction: 'right', name: 'Turn Right' },
-            { type: 'fire', name: 'Fire Weapon' }
-        ];
-        
         const cards = [];
         
-        // Always include these 4 guaranteed cards
-        cards.push({ type: 'turn', direction: 'left', name: 'Turn Left', id: 0 });
-        cards.push({ type: 'turn', direction: 'right', name: 'Turn Right', id: 1 });
-        cards.push({ type: 'move', direction: 'forward', steps: 1, name: 'Move Forward 1', id: 2 });
-        cards.push({ type: 'fire', name: 'Fire Weapon', id: 3 });
+        // Always include these 4 guaranteed cards using CardFactory
+        cards.push(CardFactory.createCard('turn', 'left'));
+        cards.push(CardFactory.createCard('turn', 'right'));
+        cards.push(CardFactory.createCard('move', 'forward', 1));
+        cards.push(CardFactory.createCard('fire'));
         
         // Add 2 completely random cards
+        const randomCardTypes = [
+            ['move', 'forward', 1],
+            ['move', 'forward', 2],
+            ['move', 'backward', 1],
+            ['turn', 'left'],
+            ['turn', 'right'],
+            ['fire']
+        ];
+        
         for (let i = 4; i < count; i++) {
-            const randomCard = cardTypes[Math.floor(Math.random() * cardTypes.length)];
-            cards.push({ ...randomCard, id: i });
+            const randomType = randomCardTypes[Math.floor(Math.random() * randomCardTypes.length)];
+            cards.push(CardFactory.createCard(...randomType));
         }
         
         // Shuffle the cards to randomize positions
@@ -260,22 +265,44 @@ class Game {
     }
     
     executeNextCard() {
+        console.log('executeNextCard called, step:', this.executionStep);
+        console.log('Selected cards indices:', this.selectedCards);
+        console.log('Player cards:', this.playerCards);
+        
         if (this.executionStep >= 4) {
+            console.log('All cards executed, ending turn');
             this.currentCardDisplay = '';
             this.endTurn();
             return;
         }
         
-        const playerCard = this.playerCards[this.selectedCards[this.executionStep]];
+        const selectedIndex = this.selectedCards[this.executionStep];
+        console.log('Selected index for step', this.executionStep, ':', selectedIndex);
+        
+        if (selectedIndex === undefined || selectedIndex >= this.playerCards.length) {
+            console.error('Invalid selected index:', selectedIndex, 'for step:', this.executionStep);
+            console.error('Selected cards:', this.selectedCards);
+            console.error('Player cards length:', this.playerCards.length);
+            this.endTurn();
+            return;
+        }
+        
+        const playerCard = this.playerCards[selectedIndex];
         const aiCard = this.aiCards[this.executionStep];
+        
+        console.log('Executing cards:', playerCard, aiCard);
         
         // Show which cards are being played
         this.currentCardDisplay = `Playing: ${playerCard.name} vs ${aiCard.name}`;
         this.cardDisplayTimer = 2000; // Show for 2 seconds
         
         // Execute both cards simultaneously
-        this.executeCard(this.playerTank, playerCard);
-        this.executeCard(this.aiTank, aiCard);
+        try {
+            this.executeCard(this.playerTank, playerCard);
+            this.executeCard(this.aiTank, aiCard);
+        } catch (error) {
+            console.error('Error executing cards:', error);
+        }
         
         this.executionStep++;
         
@@ -284,115 +311,56 @@ class Game {
     }
     
     executeCard(tank, card) {
-        switch (card.type) {
-            case 'move':
-                this.executeMove(tank, card);
-                break;
-            case 'turn':
-                this.applyTankTurn(tank, card);
-                break;
-            case 'fire':
-                this.executeFire(tank);
-                break;
-            case 'teleport':
-                this.executeTeleport(tank);
-                break;
-        }
-    }
-    
-    executeMove(tank, card) {
-        const steps = card.steps;
-        const direction = card.direction === 'forward' ? 1 : -1;
+        console.log(`Executing card for ${tank.owner}:`, card);
         
-        let finalX = tank.x;
-        let finalY = tank.y;
-        
-        for (let i = 0; i < steps; i++) {
-            const newX = finalX + Math.cos(tank.angle * Math.PI / 180) * direction;
-            const newY = finalY + Math.sin(tank.angle * Math.PI / 180) * direction;
-            
-            if (this.maze.isValidPosition(newX, newY)) {
-                finalX = newX;
-                finalY = newY;
+        try {
+            // All cards should now have their own execute method
+            if (card.execute && typeof card.execute === 'function') {
+                card.execute(tank, this);
             } else {
-                break; // Stop if we hit a wall
+                console.error(`Card ${card.name} does not have an execute method:`, card);
+                throw new Error(`Card ${card.name} does not have an execute method`);
             }
-        }
-        
-        // Set the target position for smooth animation
-        tank.moveTo(finalX, finalY);
-    }
-    
-    applyTankTurn(tank, card) {
-        const angleChange = card.direction === 'left' ? -90 : 90;
-        let newAngle = (tank.angle + angleChange) % 360;
-        if (newAngle < 0) newAngle += 360;
-        tank.rotateTo(newAngle);
-    }
-    
-    executeFire(tank) {
-        const weapon = tank.equipment.weapon;
-        
-        // Calculate the position one square ahead of the tank in the cannon direction
-        const startX = tank.x + Math.cos(tank.angle * Math.PI / 180);
-        const startY = tank.y + Math.sin(tank.angle * Math.PI / 180);
-        
-        // Create projectile at the calculated position
-        const projectile = new Projectile(
-            startX,
-            startY,
-            tank.angle,
-            weapon.damage,
-            weapon.range,
-            tank.owner
-        );
-        
-        projectile.maze = this.maze; // Pass maze reference to projectile
-        this.projectiles.push(projectile);
-    }
-    
-    executeTeleport(tank) {
-        if (tank.owner === 'player') {
-            // Find a random position 2 hexes away from AI tank
-            const targetPosition = this.findTeleportPosition();
-            if (targetPosition) {
-                tank.moveTo(targetPosition.x, targetPosition.y);
-            }
+        } catch (error) {
+            console.error(`Error executing card ${card.name} for ${tank.owner}:`, error);
+            throw error;
         }
     }
     
-    findTeleportPosition() {
+
+    
+
+    
+    findValidTeleportPositions() {
         const aiTank = this.aiTank;
-        const attempts = 50; // Try 50 times to find a valid position
+        const validPositions = [];
         
-        for (let i = 0; i < attempts; i++) {
-            // Generate a random angle
-            const angle = Math.random() * 360;
-            const distance = 2; // 2 hexes away
-            
-            // Calculate position 2 hexes away from AI tank
-            const teleportX = aiTank.x + Math.cos(angle * Math.PI / 180) * distance;
-            const teleportY = aiTank.y + Math.sin(angle * Math.PI / 180) * distance;
-            
-            // Check if position is valid (within maze bounds and not a wall)
-            if (teleportX >= 0 && teleportX < this.maze.width && 
-                teleportY >= 0 && teleportY < this.maze.height &&
-                this.maze.isValidPosition(teleportX, teleportY)) {
-                
-                // Check if position is not occupied by player tank
-                const playerGridX = Math.floor(this.playerTank.x);
-                const playerGridY = Math.floor(this.playerTank.y);
-                const teleportGridX = Math.floor(teleportX);
-                const teleportGridY = Math.floor(teleportY);
-                
-                if (teleportGridX !== playerGridX || teleportGridY !== playerGridY) {
-                    return { x: teleportX, y: teleportY };
+        // Check all positions 2 squares away from AI tank
+        for (let dx = -2; dx <= 2; dx++) {
+            for (let dy = -2; dy <= 2; dy++) {
+                // Only positions exactly 2 squares away (Manhattan distance)
+                if (Math.abs(dx) + Math.abs(dy) === 2) {
+                    const teleportX = aiTank.x + dx;
+                    const teleportY = aiTank.y + dy;
+                    
+                    // Check if position is valid
+                    if (teleportX >= 0 && teleportX < this.maze.width && 
+                        teleportY >= 0 && teleportY < this.maze.height &&
+                        this.maze.isValidPosition(teleportX, teleportY)) {
+                        
+                        // Check if not occupied by player tank
+                        const playerGridX = Math.floor(this.playerTank.x);
+                        const playerGridY = Math.floor(this.playerTank.y);
+                        
+                        if (teleportX !== playerGridX || teleportY !== playerGridY) {
+                            validPositions.push({ x: teleportX + 0.5, y: teleportY + 0.5 });
+                        }
+                    }
                 }
             }
         }
         
-        // If no valid position found, return null
-        return null;
+        return validPositions;
     }
     
     endTurn() {
@@ -530,13 +498,30 @@ class Game {
         this.points -= item.cost;
         
         if (item.type === 'teleport') {
-            // Add teleport card to current hand
-            const teleportCard = {
-                type: 'teleport',
-                name: 'Teleport',
-                id: this.playerCards.length
-            };
-            this.playerCards.push(teleportCard);
+            // Find a random card to replace (one of the 2 random cards, not the guaranteed ones)
+            const randomCardIndices = [];
+            for (let i = 0; i < this.playerCards.length; i++) {
+                const card = this.playerCards[i];
+                            // Only replace cards that are not the guaranteed ones (turn left, turn right, move forward 1, fire)
+            if (card.name !== 'Turn left' && card.name !== 'Turn right' && 
+                card.name !== 'Move forward 1' && card.name !== 'Fire Weapon') {
+                    randomCardIndices.push(i);
+                }
+            }
+            
+            if (randomCardIndices.length > 0) {
+                // Pick a random card to replace
+                const replaceIndex = randomCardIndices[Math.floor(Math.random() * randomCardIndices.length)];
+                
+                // Replace the card with teleport using the proper card creation
+                this.playerCards[replaceIndex] = CardFactory.createCard('teleport');
+                
+                console.log(`Replaced card at index ${replaceIndex} with Teleport`);
+                
+                // Clear selected cards since we modified the hand
+                this.selectedCards = [];
+            }
+            
             this.updateCardUI();
         }
         
@@ -664,52 +649,101 @@ class Game {
     }
     
     update(deltaTime) {
-        // Update projectiles
-        this.projectiles.forEach((projectile, index) => {
+        // Debug: Show number of projectiles
+        if (this.projectiles.length > 0) {
+            console.log(`Active projectiles: ${this.projectiles.length}`);
+        }
+        
+        // Update projectiles - iterate backwards to avoid index issues when removing
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const projectile = this.projectiles[i];
             projectile.update(deltaTime);
             
-            // Check collision with tanks
-            if (this.checkProjectileCollision(projectile, this.playerTank)) {
-                this.playerTank.takeDamage(projectile.damage);
-                this.projectiles.splice(index, 1);
-                this.createExplosion(projectile.x, projectile.y);
-            } else if (this.checkProjectileCollision(projectile, this.aiTank)) {
-                this.aiTank.takeDamage(projectile.damage);
-                this.projectiles.splice(index, 1);
-                this.createExplosion(projectile.x, projectile.y);
+            let shouldRemove = false;
+            
+            // Check collision with walls FIRST (before tank collision)
+            console.log('Checking wall collision at:', projectile.x, projectile.y, 'Grid:', Math.floor(projectile.x), Math.floor(projectile.y));
+            
+            // Debug: Show grid values around projectile
+            const gridX = Math.floor(projectile.x);
+            const gridY = Math.floor(projectile.y);
+            console.log('Grid values around projectile:');
+            for (let dy = -1; dy <= 1; dy++) {
+                let row = '';
+                for (let dx = -1; dx <= 1; dx++) {
+                    const x = gridX + dx;
+                    const y = gridY + dy;
+                    if (x >= 0 && x < this.maze.width && y >= 0 && y < this.maze.height) {
+                        row += this.maze.grid[y][x] + ' ';
+                    } else {
+                        row += 'X ';
+                    }
+                }
+                console.log(row);
             }
             
-            // Check collision with walls
             if (this.maze.isWall(projectile.x, projectile.y)) {
+                console.log('=== WALL COLLISION DETECTED ===');
                 console.log('Projectile hit wall at:', projectile.x, projectile.y);
+                console.log('Grid coordinates:', Math.floor(projectile.x), Math.floor(projectile.y));
                 console.log('Projectile can destroy walls:', projectile.canDestroyWalls);
-                this.projectiles.splice(index, 1);
+                console.log('Projectile damage:', projectile.damage);
+                console.log('Projectile owner:', projectile.owner);
+                console.log('Wall value at collision:', this.maze.grid[Math.floor(projectile.y)][Math.floor(projectile.x)]);
                 this.createExplosion(projectile.x, projectile.y);
                 
-                                 // Destroy wall if projectile can do so
-                 if (projectile.canDestroyWalls) {
-                     console.log('Destroying wall at:', projectile.x, projectile.y);
-                     this.maze.destroyWall(projectile.x, projectile.y);
-                     
-                     // Award points for destroying wall
-                     this.points += 50;
-                     this.updateUI();
-                 }
+                // Destroy wall if projectile can do so
+                if (projectile.canDestroyWalls) {
+                    console.log('=== DESTROYING WALL ===');
+                    console.log('Destroying wall at:', projectile.x, projectile.y);
+                    console.log('Grid coordinates:', Math.floor(projectile.x), Math.floor(projectile.y));
+                    console.log('Wall value before destruction:', this.maze.grid[Math.floor(projectile.y)][Math.floor(projectile.x)]);
+                    this.maze.destroyWall(projectile.x, projectile.y);
+                    console.log('Wall value after destruction:', this.maze.grid[Math.floor(projectile.y)][Math.floor(projectile.x)]);
+                    console.log('Is wall still there?', this.maze.isWall(projectile.x, projectile.y));
+                    
+                    // Award points for destroying wall (only if player fired)
+                    if (projectile.owner === 'player') {
+                        console.log('Awarding 50 points for destroying wall');
+                        console.log('Points before:', this.points);
+                        this.points += 50;
+                        console.log('Points after:', this.points);
+                        this.updateUI();
+                    }
+                } else {
+                    console.log('Projectile cannot destroy walls');
+                }
+                shouldRemove = true;
+            }
+            // Check collision with tanks AFTER wall collision
+            else if (this.checkProjectileCollision(projectile, this.playerTank)) {
+                this.playerTank.takeDamage(projectile.damage);
+                this.createExplosion(projectile.x, projectile.y);
+                shouldRemove = true;
+            } else if (this.checkProjectileCollision(projectile, this.aiTank)) {
+                this.aiTank.takeDamage(projectile.damage);
+                this.createExplosion(projectile.x, projectile.y);
+                shouldRemove = true;
             }
             
             // Check if projectile is outside maze bounds
             if (projectile.x < 0 || projectile.x >= this.maze.width || 
                 projectile.y < 0 || projectile.y >= this.maze.height) {
                 console.log('Projectile outside maze bounds, removing');
-                this.projectiles.splice(index, 1);
+                shouldRemove = true;
             }
             
             // Remove projectiles that are out of range
             if (projectile.distanceTraveled > projectile.range) {
                 console.log('Projectile out of range, removing');
-                this.projectiles.splice(index, 1);
+                shouldRemove = true;
             }
-        });
+            
+            // Remove projectile if needed
+            if (shouldRemove) {
+                this.projectiles.splice(i, 1);
+            }
+        }
         
         // Update explosions
         this.explosions.forEach((explosion, index) => {

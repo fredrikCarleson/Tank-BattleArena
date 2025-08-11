@@ -11,7 +11,7 @@ class Projectile {
         this.speed = 1; // 1 square per movement
         this.distanceTraveled = 0;
         this.moveTimer = 0;
-        this.moveInterval = 500; // Move every 500ms (half a second)
+        this.moveInterval = 200; // Move every 200ms (faster for better collision detection)
         
         // Visual properties
         this.size = 3;
@@ -39,6 +39,11 @@ class Projectile {
             this.x += dx;
             this.y += dy;
             this.distanceTraveled += this.speed;
+            
+            // Debug: Log projectile position
+            if (this.owner === 'player') {
+                console.log(`Projectile position: (${this.x.toFixed(2)}, ${this.y.toFixed(2)})`);
+            }
             
             // Update trail
             this.trail.push({ x: this.x, y: this.y });
@@ -253,20 +258,67 @@ class FireCard extends Card {
     
     execute(tank, game) {
         const weapon = tank.equipment.weapon;
+        
+        console.log('FireCard execute - weapon:', weapon);
+        console.log('Weapon canDestroyWalls:', weapon.canDestroyWalls);
+        console.log('Weapon damage:', weapon.damage);
+        
+        // Calculate the position one square ahead of the tank in the cannon direction
+        const startX = tank.x + Math.cos(tank.angle * Math.PI / 180);
+        const startY = tank.y + Math.sin(tank.angle * Math.PI / 180);
+        
         const projectile = new Projectile(
-            tank.x,
-            tank.y,
+            startX,
+            startY,
             tank.angle,
             weapon.damage,
             weapon.range,
             tank.owner
         );
         
+        console.log('Projectile canDestroyWalls before weapon copy:', projectile.canDestroyWalls);
+        
         // Copy weapon properties
         projectile.canDestroyWalls = weapon.canDestroyWalls || false;
         projectile.canShootOverWalls = weapon.canShootOverWalls || false;
         
+        console.log('Projectile canDestroyWalls after weapon copy:', projectile.canDestroyWalls);
+        
+        // Pass maze reference to projectile
+        projectile.maze = game.maze;
+        
+        console.log('=== PROJECTILE CREATED ===');
+        console.log('Projectile created at:', startX, startY);
+        console.log('Projectile angle:', tank.angle);
+        console.log('Projectile canDestroyWalls:', projectile.canDestroyWalls);
+        console.log('Projectile damage:', projectile.damage);
         game.projectiles.push(projectile);
+    }
+}
+
+class TeleportCard extends Card {
+    constructor() {
+        super('teleport', 'Teleport', 'Teleport to a random position near the enemy tank');
+    }
+    
+    execute(tank, game) {
+        // Find valid teleport positions around the AI tank
+        const validPositions = game.findValidTeleportPositions();
+        
+        if (validPositions.length > 0) {
+            // Pick a random valid position
+            const targetPosition = validPositions[Math.floor(Math.random() * validPositions.length)];
+            
+            // Teleport the tank directly
+            tank.x = targetPosition.x;
+            tank.y = targetPosition.y;
+            tank.targetX = targetPosition.x;
+            tank.targetY = targetPosition.y;
+            
+            console.log(`Teleporting ${tank.owner} to:`, targetPosition.x, targetPosition.y);
+        } else {
+            console.log('No valid teleport positions found');
+        }
     }
 }
 
@@ -280,6 +332,8 @@ class CardFactory {
                 return new TurnCard(args[0]);
             case 'fire':
                 return new FireCard();
+            case 'teleport':
+                return new TeleportCard();
             default:
                 throw new Error(`Unknown card type: ${type}`);
         }
