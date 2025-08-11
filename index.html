@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tank Battle Arena</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>Tank Battle Arena</h1>
+            <div id="game-info">
+                <div id="level-info">Level: <span id="level">1</span></div>
+                <div id="score-info">Score: <span id="score">0</span></div>
+                <div id="points-info">Points: <span id="points">0</span></div>
+            </div>
+        </header>
+        
+        <div id="game-area">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <div id="ui-panel">
+                <div id="card-area">
+                    <h3>Navigation Cards</h3>
+                    <div id="cards-container"></div>
+                    <div id="selected-cards">
+                        <h4>Selected Cards (0/4)</h4>
+                        <div id="selected-cards-container"></div>
+                    </div>
+                    <button id="play-cards-btn" disabled>Play Cards</button>
+                </div>
+                
+                <div id="equipment-panel">
+                    <h3>Equipment</h3>
+                    <div id="player-equipment">
+                        <div class="equipment-slot" data-slot="weapon">
+                            <span class="slot-label">Weapon</span>
+                            <div class="equipment-item" id="weapon-slot">Basic Cannon</div>
+                        </div>
+                        <div class="equipment-slot" data-slot="armor">
+                            <span class="slot-label">Armor</span>
+                            <div class="equipment-item" id="armor-slot">None</div>
+                        </div>
+                    </div>
+                    
+                    <div id="shop-panel">
+                        <h4>Shop</h4>
+                        <div id="shop-items"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="game-controls">
+            <button id="new-game-btn">New Game</button>
+            <button id="difficulty-btn">Difficulty: Easy</button>
+            <button id="shop-btn">Shop</button>
+            <button id="buy-cards-btn">Buy Cards</button>
+        </div>
+    </div>
+    
+    <!-- Game Modals -->
+    <div id="game-over-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Game Over</h2>
+            <p id="game-over-message"></p>
+            <div id="final-stats"></div>
+            <button id="restart-btn">Play Again</button>
+            <button id="main-menu-btn">Main Menu</button>
+        </div>
+    </div>
+    
+    <div id="shop-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Equipment Shop</h2>
+            <div id="shop-items-modal"></div>
+            <button id="close-shop-btn">Close</button>
+        </div>
+    </div>
+    
+    <div id="buy-cards-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Buy Cards</h2>
+            <div id="buy-cards-items-modal"></div>
+            <button id="close-buy-cards-btn">Close</button>
+        </div>
+    </div>
+    
+    <script src="js/game.js"></script>
+    <script src="js/maze.js"></script>
+    <script src="js/tank.js"></script>
+    <script src="js/cards.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/equipment.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
