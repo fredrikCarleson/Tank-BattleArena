@@ -157,23 +157,57 @@ class Tank {
         ctx.translate(centerX, centerY);
         ctx.rotate(this.angle * Math.PI / 180);
         
-        // Draw tank body
-        ctx.fillStyle = this.color;
+        // Draw tank shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(-radius + 2, -radius + 2, radius * 2, radius * 2);
+        
+        // Draw tank body with gradient
+        const bodyGradient = ctx.createLinearGradient(-radius, -radius, radius, radius);
+        bodyGradient.addColorStop(0, this.color);
+        bodyGradient.addColorStop(0.7, this.owner === 'player' ? '#00cc00' : '#cc0000');
+        bodyGradient.addColorStop(1, this.owner === 'player' ? '#008800' : '#880000');
+        
+        ctx.fillStyle = bodyGradient;
         ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
         
-        // Draw tank outline
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-radius, -radius, radius * 2, radius * 2);
+        // Draw tank body highlight
+        ctx.fillStyle = this.owner === 'player' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.2)';
+        ctx.fillRect(-radius, -radius, radius * 2, radius * 0.4);
         
-        // Draw turret
-        ctx.fillStyle = this.turretColor;
+        // Draw tank outline with glow effect
+        ctx.strokeStyle = this.owner === 'player' ? '#00ff00' : '#ff0000';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = this.owner === 'player' ? '#00ff00' : '#ff0000';
+        ctx.shadowBlur = 5;
+        ctx.strokeRect(-radius, -radius, radius * 2, radius * 2);
+        ctx.shadowBlur = 0;
+        
+        // Draw turret with gradient
+        const turretGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.6);
+        turretGradient.addColorStop(0, this.turretColor);
+        turretGradient.addColorStop(1, this.owner === 'player' ? '#006600' : '#660000');
+        
+        ctx.fillStyle = turretGradient;
         const turretSize = radius * 0.6;
         ctx.fillRect(-turretSize/2, -turretSize/2, turretSize, turretSize);
         
-        // Draw cannon
-        ctx.fillStyle = '#333';
+        // Draw turret outline
+        ctx.strokeStyle = this.owner === 'player' ? '#00ff00' : '#ff0000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-turretSize/2, -turretSize/2, turretSize, turretSize);
+        
+        // Draw cannon with metallic effect
+        const cannonGradient = ctx.createLinearGradient(0, -radius * 0.1, radius * 0.8, radius * 0.1);
+        cannonGradient.addColorStop(0, '#666');
+        cannonGradient.addColorStop(0.5, '#999');
+        cannonGradient.addColorStop(1, '#333');
+        
+        ctx.fillStyle = cannonGradient;
         ctx.fillRect(0, -radius * 0.1, radius * 0.8, radius * 0.2);
+        
+        // Draw cannon highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fillRect(0, -radius * 0.1, radius * 0.8, radius * 0.08);
         
         // Draw tank details
         this.drawTankDetails(ctx, radius);
@@ -190,43 +224,101 @@ class Tank {
     }
     
     drawTankDetails(ctx, radius) {
-        // Draw tank tracks
-        ctx.fillStyle = '#000';
+        // Draw tank tracks with metallic effect
+        const trackGradient = ctx.createLinearGradient(-radius, 0, radius, 0);
+        trackGradient.addColorStop(0, '#333');
+        trackGradient.addColorStop(0.3, '#666');
+        trackGradient.addColorStop(0.7, '#666');
+        trackGradient.addColorStop(1, '#333');
+        
+        ctx.fillStyle = trackGradient;
         ctx.fillRect(-radius, -radius * 0.9, radius * 2, radius * 0.1);
         ctx.fillRect(-radius, radius * 0.8, radius * 2, radius * 0.1);
         
-        // Draw tank identification
+        // Draw track details (rivets)
+        ctx.fillStyle = '#000';
+        for (let i = 0; i < 6; i++) {
+            const x = -radius + (i + 1) * (radius * 2 / 7);
+            ctx.beginPath();
+            ctx.arc(x, -radius * 0.85, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x, radius * 0.85, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw tank identification with glow
+        ctx.shadowColor = this.owner === 'player' ? '#00ff00' : '#ff0000';
+        ctx.shadowBlur = 3;
         ctx.fillStyle = '#fff';
-        ctx.font = `${radius * 0.4}px monospace`;
+        ctx.font = `bold ${radius * 0.4}px monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.owner === 'player' ? 'P' : 'E', 0, 0);
+        ctx.shadowBlur = 0;
+        
+        // Draw tank armor plates
+        ctx.fillStyle = this.owner === 'player' ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)';
+        ctx.fillRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4);
+        
+        // Draw armor plate lines
+        ctx.strokeStyle = this.owner === 'player' ? '#00ff00' : '#ff0000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4);
     }
     
     drawStunEffect(ctx, centerX, centerY, radius) {
         ctx.save();
         ctx.translate(centerX, centerY);
         
-        // Draw stun stars
-        ctx.fillStyle = '#ffff00';
-        ctx.font = `${radius * 0.6}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
         const time = Date.now() * 0.01;
-        const numStars = 4;
+        const numStars = 6;
         
+        // Draw stun stars with enhanced effects
         for (let i = 0; i < numStars; i++) {
             const angle = (i / numStars) * Math.PI * 2 + time;
-            const x = Math.cos(angle) * radius * 1.5;
-            const y = Math.sin(angle) * radius * 1.5;
+            const x = Math.cos(angle) * radius * 1.8;
+            const y = Math.sin(angle) * radius * 1.8;
             
             ctx.save();
             ctx.translate(x, y);
-            ctx.rotate(time * 2);
+            ctx.rotate(time * 2 + i * 0.5);
+            
+            // Star glow effect
+            ctx.shadowColor = '#ffff00';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = '#ffff00';
+            ctx.font = `bold ${radius * 0.7}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             ctx.fillText('★', 0, 0);
+            
+            // Inner star
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${radius * 0.4}px monospace`;
+            ctx.fillText('★', 0, 0);
+            
             ctx.restore();
         }
+        
+        // Draw stun ring
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#ffff00';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.2, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw pulsing effect
+        const pulseSize = 1 + Math.sin(time * 3) * 0.2;
+        ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius * 1.4 * pulseSize, 0, Math.PI * 2);
+        ctx.stroke();
         
         ctx.restore();
     }
@@ -236,26 +328,57 @@ class Tank {
         const barHeight = radius * 0.2;
         const barY = centerY - radius - barHeight - 5;
         
-        // Background
-        ctx.fillStyle = '#333';
+        // Health bar background with gradient
+        const bgGradient = ctx.createLinearGradient(centerX - barWidth/2, barY, centerX + barWidth/2, barY);
+        bgGradient.addColorStop(0, '#222');
+        bgGradient.addColorStop(0.5, '#333');
+        bgGradient.addColorStop(1, '#222');
+        
+        ctx.fillStyle = bgGradient;
         ctx.fillRect(centerX - barWidth/2, barY, barWidth, barHeight);
         
-        // Health bar
+        // Health bar with gradient
         const healthPercent = this.health / this.maxHealth;
-        ctx.fillStyle = healthPercent > 0.5 ? '#0f0' : healthPercent > 0.25 ? '#ff0' : '#f00';
+        const healthGradient = ctx.createLinearGradient(centerX - barWidth/2, barY, centerX + barWidth/2, barY);
+        
+        if (healthPercent > 0.6) {
+            healthGradient.addColorStop(0, '#00ff00');
+            healthGradient.addColorStop(0.5, '#00cc00');
+            healthGradient.addColorStop(1, '#008800');
+        } else if (healthPercent > 0.3) {
+            healthGradient.addColorStop(0, '#ffff00');
+            healthGradient.addColorStop(0.5, '#cccc00');
+            healthGradient.addColorStop(1, '#888800');
+        } else {
+            healthGradient.addColorStop(0, '#ff0000');
+            healthGradient.addColorStop(0.5, '#cc0000');
+            healthGradient.addColorStop(1, '#880000');
+        }
+        
+        ctx.fillStyle = healthGradient;
         ctx.fillRect(centerX - barWidth/2, barY, barWidth * healthPercent, barHeight);
         
-        // Border
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(centerX - barWidth/2, barY, barWidth, barHeight);
+        // Health bar highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillRect(centerX - barWidth/2, barY, barWidth * healthPercent, barHeight / 2);
         
-        // Health text
+        // Border with glow
+        ctx.strokeStyle = this.owner === 'player' ? '#00ff00' : '#ff0000';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = this.owner === 'player' ? '#00ff00' : '#ff0000';
+        ctx.shadowBlur = 3;
+        ctx.strokeRect(centerX - barWidth/2, barY, barWidth, barHeight);
+        ctx.shadowBlur = 0;
+        
+        // Health text with glow
+        ctx.shadowColor = this.owner === 'player' ? '#00ff00' : '#ff0000';
+        ctx.shadowBlur = 2;
         ctx.fillStyle = '#fff';
-        ctx.font = `${radius * 0.3}px monospace`;
+        ctx.font = `bold ${radius * 0.3}px monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(`${this.health}/${this.maxHealth}`, centerX, barY + barHeight/2);
+        ctx.shadowBlur = 0;
     }
     
     // Equipment methods

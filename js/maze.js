@@ -137,23 +137,77 @@ class Maze {
                 const cellY = offsetY + y * this.cellSize;
                 
                 if (this.grid[y][x] === 1) {
-                    // Render wall
-                    ctx.fillStyle = '#444';
+                    // Render wall with enhanced visuals
+                    const wallGradient = ctx.createLinearGradient(cellX, cellY, cellX + this.cellSize, cellY + this.cellSize);
+                    wallGradient.addColorStop(0, '#666');
+                    wallGradient.addColorStop(0.3, '#888');
+                    wallGradient.addColorStop(0.7, '#555');
+                    wallGradient.addColorStop(1, '#333');
+                    
+                    ctx.fillStyle = wallGradient;
                     ctx.fillRect(cellX, cellY, this.cellSize, this.cellSize);
                     
-                    // Add some texture
-                    ctx.strokeStyle = '#333';
+                    // Add wall texture (brick pattern)
+                    ctx.strokeStyle = '#444';
                     ctx.lineWidth = 1;
+                    
+                    // Horizontal brick lines
+                    for (let i = 1; i < 4; i++) {
+                        const y = cellY + (i * this.cellSize / 4);
+                        ctx.beginPath();
+                        ctx.moveTo(cellX, y);
+                        ctx.lineTo(cellX + this.cellSize, y);
+                        ctx.stroke();
+                    }
+                    
+                    // Vertical brick lines (staggered)
+                    for (let i = 0; i < 4; i++) {
+                        const x = cellX + (i * this.cellSize / 4);
+                        const startY = cellY + (i % 2 === 0 ? 0 : this.cellSize / 8);
+                        const endY = cellY + this.cellSize - (i % 2 === 0 ? this.cellSize / 8 : 0);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(x, startY);
+                        ctx.lineTo(x, endY);
+                        ctx.stroke();
+                    }
+                    
+                    // Add wall highlight
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.fillRect(cellX, cellY, this.cellSize, this.cellSize / 4);
+                    
+                    // Add wall shadow
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.fillRect(cellX, cellY + this.cellSize * 0.75, this.cellSize, this.cellSize / 4);
+                    
+                    // Add wall outline with glow
+                    ctx.strokeStyle = '#e94560';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#e94560';
+                    ctx.shadowBlur = 3;
                     ctx.strokeRect(cellX, cellY, this.cellSize, this.cellSize);
+                    ctx.shadowBlur = 0;
+                    
                 } else {
-                    // Render floor
-                    ctx.fillStyle = '#222';
+                    // Render floor with enhanced visuals
+                    const floorGradient = ctx.createRadialGradient(
+                        cellX + this.cellSize/2, cellY + this.cellSize/2, 0,
+                        cellX + this.cellSize/2, cellY + this.cellSize/2, this.cellSize/2
+                    );
+                    floorGradient.addColorStop(0, '#2a2a2a');
+                    floorGradient.addColorStop(1, '#1a1a1a');
+                    
+                    ctx.fillStyle = floorGradient;
                     ctx.fillRect(cellX, cellY, this.cellSize, this.cellSize);
                     
-                    // Add subtle grid lines
+                    // Add subtle floor texture
                     ctx.strokeStyle = '#333';
                     ctx.lineWidth = 0.5;
                     ctx.strokeRect(cellX, cellY, this.cellSize, this.cellSize);
+                    
+                    // Add subtle floor pattern
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+                    ctx.fillRect(cellX + 2, cellY + 2, this.cellSize - 4, this.cellSize - 4);
                 }
             }
         }
