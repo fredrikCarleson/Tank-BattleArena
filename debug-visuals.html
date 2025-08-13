@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Visual Changes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            margin: 20px;
+        }
+        
+        .debug-panel {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tank-display {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        canvas {
+            border: 2px solid #555;
+            background: #000;
+        }
+        
+        .info {
+            background: #333;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        button {
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #00cc00;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Visual Changes</h1>
+    
+    <div class="debug-panel">
+        <h3>Test Equipment Changes</h3>
+        <button onclick="testBasicCannon()">Basic Cannon</button>
+        <button onclick="testHeavyCannon()">Heavy Cannon</button>
+        <button onclick="testLaserCannon()">Laser Cannon</button>
+        <button onclick="testMissileLauncher()">Missile Launcher</button>
+        <button onclick="testPlasmaCannon()">Plasma Cannon</button>
+        <br><br>
+        <button onclick="testLightArmor()">Light Armor</button>
+        <button onclick="testHeavyArmor()">Heavy Armor</button>
+        <button onclick="testReactiveArmor()">Reactive Armor</button>
+        <button onclick="testStealthArmor()">Stealth Armor</button>
+        <br><br>
+        <button onclick="testCombination()">Heavy Cannon + Heavy Armor</button>
+    </div>
+    
+    <div class="tank-display">
+        <div>
+            <h3>Player Tank</h3>
+            <canvas id="playerCanvas" width="300" height="300"></canvas>
+            <div class="info" id="playerInfo"></div>
+        </div>
+        <div>
+            <h3>AI Tank</h3>
+            <canvas id="aiCanvas" width="300" height="300"></canvas>
+            <div class="info" id="aiInfo"></div>
+        </div>
+    </div>
+
+    <script src="js/equipment.js?v=8.3"></script>
+    <script src="js/maze.js?v=8.3"></script>
+    <script src="js/tank.js?v=8.3"></script>
+    
+    <script>
+        const equipment = new Equipment();
+        const maze = new Maze(5, 5, 1);
+        let playerTank = new Tank(2, 2, 0, 'player', maze);
+        let aiTank = new Tank(3, 3, 180, 'ai', maze);
+        
+        const playerCanvas = document.getElementById('playerCanvas');
+        const aiCanvas = document.getElementById('aiCanvas');
+        const playerInfo = document.getElementById('playerInfo');
+        const aiInfo = document.getElementById('aiInfo');
+        
+        function renderTanks() {
+            // Clear canvases
+            const playerCtx = playerCanvas.getContext('2d');
+            const aiCtx = aiCanvas.getContext('2d');
+            
+            playerCtx.clearRect(0, 0, playerCanvas.width, playerCanvas.height);
+            aiCtx.clearRect(0, 0, aiCanvas.width, aiCanvas.height);
+            
+            // Render tanks
+            playerTank.render(playerCtx);
+            aiTank.render(aiCtx);
+            
+            // Update info
+            playerInfo.innerHTML = `
+                Weapon: ${playerTank.equipment.weapon ? playerTank.equipment.weapon.name : 'None'} (ID: ${playerTank.equipment.weapon ? playerTank.equipment.weapon.id : 'None'})<br>
+                Armor: ${playerTank.equipment.armor ? playerTank.equipment.armor.name : 'None'}<br>
+                Health: ${playerTank.health}/${playerTank.maxHealth}<br>
+                Body Sprite: ${playerTank.bodySprite.type}<br>
+                Turret Sprite: ${playerTank.turretSprite.type}
+            `;
+            
+            aiInfo.innerHTML = `
+                Weapon: ${aiTank.equipment.weapon ? aiTank.equipment.weapon.name : 'None'} (ID: ${aiTank.equipment.weapon ? aiTank.equipment.weapon.id : 'None'})<br>
+                Armor: ${aiTank.equipment.armor ? aiTank.equipment.armor.name : 'None'}<br>
+                Health: ${aiTank.health}/${aiTank.maxHealth}<br>
+                Body Sprite: ${aiTank.bodySprite.type}<br>
+                Turret Sprite: ${aiTank.turretSprite.type}
+            `;
+        }
+        
+        function testBasicCannon() {
+            console.log('Testing Basic Cannon');
+            playerTank.equipWeapon(equipment.getWeapon('basicCannon'));
+            renderTanks();
+        }
+        
+        function testHeavyCannon() {
+            console.log('Testing Heavy Cannon');
+            playerTank.equipWeapon(equipment.getWeapon('heavyCannon'));
+            renderTanks();
+        }
+        
+        function testLaserCannon() {
+            console.log('Testing Laser Cannon');
+            playerTank.equipWeapon(equipment.getWeapon('laserCannon'));
+            renderTanks();
+        }
+        
+        function testMissileLauncher() {
+            console.log('Testing Missile Launcher');
+            playerTank.equipWeapon(equipment.getWeapon('missileLauncher'));
+            renderTanks();
+        }
+        
+        function testPlasmaCannon() {
+            console.log('Testing Plasma Cannon');
+            playerTank.equipWeapon(equipment.getWeapon('plasmaCannon'));
+            renderTanks();
+        }
+        
+        function testLightArmor() {
+            console.log('Testing Light Armor');
+            playerTank.equipArmor(equipment.getArmor('lightArmor'));
+            renderTanks();
+        }
+        
+        function testHeavyArmor() {
+            console.log('Testing Heavy Armor');
+            playerTank.equipArmor(equipment.getArmor('heavyArmor'));
+            renderTanks();
+        }
+        
+        function testReactiveArmor() {
+            console.log('Testing Reactive Armor');
+            playerTank.equipArmor(equipment.getArmor('reactiveArmor'));
+            renderTanks();
+        }
+        
+        function testStealthArmor() {
+            console.log('Testing Stealth Armor');
+            playerTank.equipArmor(equipment.getArmor('stealthArmor'));
+            renderTanks();
+        }
+        
+        function testCombination() {
+            console.log('Testing Heavy Cannon + Heavy Armor');
+            playerTank.equipWeapon(equipment.getWeapon('heavyCannon'));
+            playerTank.equipArmor(equipment.getArmor('heavyArmor'));
+            renderTanks();
+        }
+        
+        // Initial render
+        renderTanks();
+        
+        // Animation loop for effects
+        function animate() {
+            renderTanks();
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>

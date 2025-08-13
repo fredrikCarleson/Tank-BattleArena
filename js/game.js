@@ -46,20 +46,38 @@ class Game {
     setupEventListeners() {
         console.log('Setting up event listeners...');
         
-        // Game control buttons
+        // Splash screen event listeners
+        this.setupSplashScreenListeners();
+        
+        // Debug panel functionality
+        const debugPanelBtn = document.getElementById('debug-panel-btn');
+        console.log('Debug panel button found:', debugPanelBtn);
+        if (debugPanelBtn) {
+            debugPanelBtn.addEventListener('click', () => {
+                console.log('Debug panel button clicked!');
+                this.toggleDebugPanel();
+            });
+        } else {
+            console.error('Debug panel button not found!');
+        }
+        
+        // Game control buttons (now in debug panel)
         const newGameBtn = document.getElementById('new-game-btn');
         console.log('New game button found:', newGameBtn);
         
         if (newGameBtn) {
             newGameBtn.addEventListener('click', () => {
                 console.log('New Game button clicked!');
-                this.startNewGame();
+                this.showSplashScreen();
             });
         } else {
             console.error('New game button not found!');
         }
         
-        document.getElementById('difficulty-btn').addEventListener('click', () => this.toggleDifficulty());
+        const difficultyBtn = document.getElementById('difficulty-btn');
+        if (difficultyBtn) {
+            difficultyBtn.addEventListener('click', () => this.toggleDifficulty());
+        }
         document.getElementById('shop-btn').addEventListener('click', () => this.openShop());
         document.getElementById('buy-cards-btn').addEventListener('click', () => this.openBuyCards());
         
@@ -84,6 +102,88 @@ class Game {
         console.log('Event listeners setup complete');
     }
     
+    setupSplashScreenListeners() {
+        // Difficulty selection buttons
+        const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+        difficultyBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.selectDifficulty(btn.dataset.difficulty);
+            });
+        });
+        
+        // Start game button
+        const startGameBtn = document.getElementById('start-game-btn');
+        if (startGameBtn) {
+            startGameBtn.addEventListener('click', () => {
+                this.startNewGame();
+            });
+        }
+        
+        // Load game button
+        const loadGameBtn = document.getElementById('load-game-btn');
+        if (loadGameBtn) {
+            loadGameBtn.addEventListener('click', () => {
+                this.loadGame();
+            });
+        }
+    }
+    
+    selectDifficulty(difficulty) {
+        // Remove selected class from all difficulty buttons
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked button
+        const selectedBtn = document.querySelector(`[data-difficulty="${difficulty}"]`);
+        if (selectedBtn) {
+            selectedBtn.classList.add('selected');
+        }
+        
+        // Update difficulty and enable start button
+        this.difficulty = difficulty;
+        const startGameBtn = document.getElementById('start-game-btn');
+        if (startGameBtn) {
+            startGameBtn.disabled = false;
+        }
+        
+        // Update difficulty display in game interface
+        const difficultyBtn = document.getElementById('difficulty-btn');
+        if (difficultyBtn) {
+            difficultyBtn.textContent = `Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
+        }
+    }
+    
+    showSplashScreen() {
+        document.getElementById('splash-screen').classList.remove('hidden');
+        document.getElementById('game-interface').classList.add('hidden');
+        document.querySelector('header').classList.add('hidden');
+    }
+    
+    hideSplashScreen() {
+        document.getElementById('splash-screen').classList.add('hidden');
+        document.getElementById('game-interface').classList.remove('hidden');
+        document.querySelector('header').classList.remove('hidden');
+    }
+    
+    loadGame() {
+        // TODO: Implement load game functionality
+        console.log('Load game functionality not implemented yet');
+        alert('Load game functionality coming soon!');
+    }
+    
+    toggleDebugPanel() {
+        console.log('toggleDebugPanel called');
+        const debugPanel = document.getElementById('debug-panel');
+        console.log('Debug panel found:', debugPanel);
+        if (debugPanel) {
+            debugPanel.classList.toggle('hidden');
+            console.log('Debug panel hidden:', debugPanel.classList.contains('hidden'));
+        } else {
+            console.error('Debug panel not found!');
+        }
+    }
+    
     startNewGame() {
         try {
             console.log('startNewGame called!');
@@ -95,6 +195,9 @@ class Game {
             this.turnPhase = 'planning';
             this.executionStep = 0;
             
+            // Hide splash screen and show game interface
+            this.hideSplashScreen();
+            
             console.log('Game state reset, updating UI...');
             this.updateUI();
             console.log('Generating level...');
@@ -103,6 +206,9 @@ class Game {
             this.dealCards();
             console.log('Starting game loop...');
             this.startGameLoop();
+            
+            // Initialize button states
+            this.updateButtonStates();
             
             // Hide modals
             document.getElementById('game-over-modal').classList.add('hidden');
@@ -131,6 +237,18 @@ class Game {
         const equipment = new Equipment();
         this.playerTank.equipWeapon(equipment.getWeapon('basicCannon'));
         this.aiTank.equipWeapon(equipment.getWeapon('basicCannon'));
+        
+        // Store equipment reference for later use
+        this.equipment = equipment;
+        
+        // Track purchased items per level
+        this.purchasedItems = {
+            weapons: new Set(),
+            armor: new Set()
+        };
+        
+        // Track persistent special cards (carry over between levels)
+        this.specialCards = [];
         
         // Clear projectiles and explosions
         this.projectiles = [];
@@ -253,6 +371,7 @@ class Game {
             
             this.turnPhase = 'executing';
             this.executionStep = 0;
+            this.updateButtonStates();
             
             // AI selects 4 random cards
             this.aiCards = this.aiCards.sort(() => Math.random() - 0.5).slice(0, 4);
@@ -344,17 +463,17 @@ class Game {
                     const teleportY = aiTank.y + dy;
                     
                     // Check if position is valid
-                    if (teleportX >= 0 && teleportX < this.maze.width && 
-                        teleportY >= 0 && teleportY < this.maze.height &&
-                        this.maze.isValidPosition(teleportX, teleportY)) {
+                            if (teleportX >= 0 && teleportX < this.maze.width &&
+            teleportY >= 0 && teleportY < this.maze.height &&
+            this.maze.isValidPosition(teleportX, teleportY, this)) {
                         
                         // Check if not occupied by player tank
                         const playerGridX = Math.floor(this.playerTank.x);
                         const playerGridY = Math.floor(this.playerTank.y);
                         
-                        if (teleportX !== playerGridX || teleportY !== playerGridY) {
-                            validPositions.push({ x: teleportX + 0.5, y: teleportY + 0.5 });
-                        }
+                                                 if (teleportX !== playerGridX || teleportY !== playerGridY) {
+                             validPositions.push({ x: teleportX, y: teleportY });
+                         }
                     }
                 }
             }
@@ -367,6 +486,7 @@ class Game {
         this.turnNumber++;
         this.turnPhase = 'planning';
         this.executionStep = 0;
+        this.updateButtonStates();
         
         // Check for game over conditions
         if (this.checkGameOver()) {
@@ -383,15 +503,16 @@ class Game {
     }
     
     checkGameOver() {
-        // Check if tanks are destroyed
+        // Check if player tank is destroyed (game over)
         if (this.playerTank.health <= 0) {
             this.endGame('You were destroyed!');
             return true;
         }
         
+        // Check if AI tank is destroyed (level completed)
         if (this.aiTank.health <= 0) {
             this.calculateScore();
-            this.endGame('Victory! You destroyed the enemy tank!');
+            this.nextLevel();
             return true;
         }
         
@@ -399,29 +520,110 @@ class Game {
     }
     
     calculateScore() {
-        const baseScore = 1000;
-        const turnBonus = Math.max(0, this.maxTurns - this.turnNumber) * 10;
-        const levelBonus = this.level * 100;
+        // Base score for completing the level
+        const baseScore = 500;
         
-        this.score = baseScore + turnBonus + levelBonus;
+        // Bonus for completing quickly (more turns remaining = higher bonus)
+        const turnsRemaining = this.maxTurns - this.turnNumber;
+        const speedBonus = Math.max(0, turnsRemaining) * 25; // 25 points per turn remaining
+        
+        // Level difficulty bonus (higher levels give more points)
+        const levelBonus = this.level * 200;
+        
+        // Health bonus (completing with more health = more points)
+        const healthBonus = this.playerTank.health * 50;
+        
+        this.score = baseScore + speedBonus + levelBonus + healthBonus;
         this.points += this.score;
         
+        console.log(`Level ${this.level} completed!`);
+        console.log(`Base Score: ${baseScore}`);
+        console.log(`Speed Bonus: ${speedBonus} (${turnsRemaining} turns remaining)`);
+        console.log(`Level Bonus: ${levelBonus}`);
+        console.log(`Health Bonus: ${healthBonus}`);
+        console.log(`Total Score: ${this.score}`);
+        console.log(`Total Points: ${this.points}`);
+    }
+    
+    nextLevel() {
         // Level up
         this.level++;
+        
+        // Show level completion message
+        this.gameState = 'levelComplete';
+        this.stopGameLoop();
+        
+        document.getElementById('game-over-message').textContent = 'Level Complete!';
+        document.getElementById('final-stats').innerHTML = `
+            <p>Level ${this.level - 1} Completed!</p>
+            <p>Score: ${this.score}</p>
+            <p>Total Points: ${this.points}</p>
+            <p>Next Level: ${this.level}</p>
+        `;
+        
+        // Change button text to "Next Level"
+        const playAgainBtn = document.getElementById('play-again-btn');
+        if (playAgainBtn) {
+            playAgainBtn.textContent = 'Next Level';
+            playAgainBtn.onclick = () => this.startNextLevel();
+        }
+        
+        document.getElementById('game-over-modal').classList.remove('hidden');
+    }
+    
+    startNextLevel() {
+        // Reset equipment (weapons and armor are lost between levels)
+        this.resetEquipment();
+        
+        // Reset purchased items tracking
+        this.purchasedItems = {
+            weapons: new Set(),
+            armor: new Set()
+        };
+        
+        // Start the new level
+        this.startLevel(this.level);
+        
+        // Hide the modal
+        document.getElementById('game-over-modal').classList.add('hidden');
+    }
+    
+    resetEquipment() {
+        // Reset player tank to basic equipment
+        const basicCannon = this.equipment.getWeapon('basicCannon');
+        this.playerTank.equipWeapon(basicCannon);
+        this.playerTank.equipArmor(null); // Remove armor
+        
+        // Reset AI tank to basic equipment
+        this.aiTank.equipWeapon(basicCannon);
+        this.aiTank.equipArmor(null); // Remove armor
+        
+        console.log('Equipment reset for new level');
     }
     
     endGame(message) {
         this.gameState = 'gameOver';
         this.stopGameLoop();
         
-        document.getElementById('game-over-message').textContent = message;
-        document.getElementById('final-stats').innerHTML = `
-            <p>Level: ${this.level}</p>
-            <p>Score: ${this.score}</p>
-            <p>Total Points: ${this.points}</p>
-        `;
+        // Show splash screen instead of modal
+        this.showSplashScreen();
         
-        document.getElementById('game-over-modal').classList.remove('hidden');
+        // Reset difficulty selection
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        // Select current difficulty
+        const currentDifficultyBtn = document.querySelector(`[data-difficulty="${this.difficulty}"]`);
+        if (currentDifficultyBtn) {
+            currentDifficultyBtn.classList.add('selected');
+        }
+        
+        // Enable start button
+        const startGameBtn = document.getElementById('start-game-btn');
+        if (startGameBtn) {
+            startGameBtn.disabled = false;
+        }
     }
     
     toggleDifficulty() {
@@ -442,6 +644,8 @@ class Game {
     closeShop() {
         this.gameState = 'playing';
         document.getElementById('shop-modal').classList.add('hidden');
+        // Restart the game loop after closing shop
+        this.startGameLoop();
     }
     
     openBuyCards() {
@@ -453,6 +657,8 @@ class Game {
     closeBuyCards() {
         this.gameState = 'playing';
         document.getElementById('buy-cards-modal').classList.add('hidden');
+        // Restart the game loop after closing buy cards
+        this.startGameLoop();
     }
     
     updateBuyCardsUI() {
@@ -484,10 +690,46 @@ class Game {
     getBuyCardsItems() {
         return [
             {
-                name: 'Teleport',
-                cost: 100,
-                description: 'Teleport to a random position 2 hexes away from enemy tank',
-                type: 'teleport'
+                name: 'Shield',
+                cost: 300,
+                description: 'Block the next damage you would take',
+                type: 'special',
+                cardType: 'shield'
+            },
+            {
+                name: 'Repair',
+                cost: 400,
+                description: 'Heal 1 health point',
+                type: 'special',
+                cardType: 'repair'
+            },
+            {
+                name: 'Double Move',
+                cost: 500,
+                description: 'Move twice in one action',
+                type: 'special',
+                cardType: 'doubleMove'
+            },
+            {
+                name: 'Quick Shot',
+                cost: 600,
+                description: 'Fire immediately without using a turn',
+                type: 'special',
+                cardType: 'quickShot'
+            },
+            {
+                name: 'EMP',
+                cost: 800,
+                description: 'Disable enemy tank for 1 turn',
+                type: 'special',
+                cardType: 'emp'
+            },
+            {
+                name: 'Overcharge',
+                cost: 1000,
+                description: 'Next shot deals double damage',
+                type: 'special',
+                cardType: 'overcharge'
             }
         ];
     }
@@ -495,34 +737,25 @@ class Game {
     purchaseCard(item) {
         if (this.points < item.cost) return;
         
+        // Check if we already have maximum special cards (4)
+        if (item.type === 'special' && this.specialCards.length >= 4) {
+            console.log('Maximum special cards reached (4)');
+            return;
+        }
+        
         this.points -= item.cost;
         
-        if (item.type === 'teleport') {
-            // Find a random card to replace (one of the 2 random cards, not the guaranteed ones)
-            const randomCardIndices = [];
-            for (let i = 0; i < this.playerCards.length; i++) {
-                const card = this.playerCards[i];
-                            // Only replace cards that are not the guaranteed ones (turn left, turn right, move forward 1, fire)
-            if (card.name !== 'Turn left' && card.name !== 'Turn right' && 
-                card.name !== 'Move forward 1' && card.name !== 'Fire Weapon') {
-                    randomCardIndices.push(i);
-                }
-            }
+        if (item.type === 'special') {
+            // Add special card to persistent collection
+            this.specialCards.push({
+                name: item.name,
+                description: item.description,
+                cardType: item.cardType,
+                id: Math.random().toString(36).substr(2, 9)
+            });
             
-            if (randomCardIndices.length > 0) {
-                // Pick a random card to replace
-                const replaceIndex = randomCardIndices[Math.floor(Math.random() * randomCardIndices.length)];
-                
-                // Replace the card with teleport using the proper card creation
-                this.playerCards[replaceIndex] = CardFactory.createCard('teleport');
-                
-                console.log(`Replaced card at index ${replaceIndex} with Teleport`);
-                
-                // Clear selected cards since we modified the hand
-                this.selectedCards = [];
-            }
-            
-            this.updateCardUI();
+            console.log(`Added special card: ${item.name}`);
+            this.updateSpecialCardsUI();
         }
         
         this.updateUI();
@@ -563,7 +796,8 @@ class Game {
                 description: 'Deals 2 damage, longer range',
                 type: 'weapon',
                 damage: 2,
-                range: 8
+                range: 8,
+                canDestroyWalls: true
             },
             {
                 name: 'Missile Launcher',
@@ -587,6 +821,12 @@ class Game {
                 description: '+2 health',
                 type: 'armor',
                 healthBonus: 2
+            },
+            {
+                name: 'Teleport',
+                cost: 400,
+                description: 'Teleport to a random position near the enemy tank',
+                type: 'teleport'
             }
         ];
     }
@@ -594,14 +834,24 @@ class Game {
     purchaseItem(item) {
         if (this.points < item.cost) return;
         
+        // Check if armor has already been purchased this level
+        if (item.type === 'armor' && this.purchasedItems.armor.has(item.id)) {
+            console.log('Armor already purchased this level:', item.name);
+            return; // Don't allow duplicate armor purchases
+        }
+        
         this.points -= item.cost;
         
         if (item.type === 'weapon') {
-            this.playerTank.equipment.weapon = item;
+            this.playerTank.equipWeapon(item);
+            this.purchasedItems.weapons.add(item.id);
         } else if (item.type === 'armor') {
-            this.playerTank.health += item.healthBonus;
-            this.playerTank.maxHealth += item.healthBonus;
+            this.playerTank.equipArmor(item);
+            this.purchasedItems.armor.add(item.id);
         }
+        
+        // Force sprite update to ensure visual changes are applied
+        this.playerTank.updateSprites();
         
         this.updateUI();
         this.updateShopUI();
@@ -756,6 +1006,11 @@ class Game {
         
         // Render UI overlays
         this.renderUI();
+        
+        // Render debug tools (if available)
+        if (this.debugTools) {
+            this.debugTools.render(this.ctx);
+        }
     }
     
     renderUI() {
@@ -772,6 +1027,136 @@ class Game {
             
             // Update timer
             this.cardDisplayTimer -= 16; // Assuming 60fps
+        }
+    }
+    
+    updateButtonStates() {
+        // Get the shop and buy cards buttons
+        const shopBtn = document.getElementById('shop-btn');
+        const buyCardsBtn = document.getElementById('buy-cards-btn');
+        
+        // Disable buttons during execution phase
+        if (this.turnPhase === 'executing') {
+            if (shopBtn) {
+                shopBtn.disabled = true;
+                shopBtn.style.opacity = '0.5';
+                shopBtn.style.cursor = 'not-allowed';
+            }
+            if (buyCardsBtn) {
+                buyCardsBtn.disabled = true;
+                buyCardsBtn.style.opacity = '0.5';
+                buyCardsBtn.style.cursor = 'not-allowed';
+            }
+        } else {
+            // Enable buttons during planning phase
+            if (shopBtn) {
+                shopBtn.disabled = false;
+                shopBtn.style.opacity = '1';
+                shopBtn.style.cursor = 'pointer';
+            }
+            if (buyCardsBtn) {
+                buyCardsBtn.disabled = false;
+                buyCardsBtn.style.opacity = '1';
+                buyCardsBtn.style.cursor = 'pointer';
+            }
+        }
+    }
+    
+    updateSpecialCardsUI() {
+        const specialCardsContainer = document.getElementById('special-cards');
+        if (!specialCardsContainer) return;
+        
+        specialCardsContainer.innerHTML = '';
+        
+        if (this.specialCards.length === 0) {
+            specialCardsContainer.innerHTML = '<p>No special cards</p>';
+            return;
+        }
+        
+        this.specialCards.forEach((card, index) => {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'special-card';
+            cardElement.innerHTML = `
+                <div class="card-name">${card.name}</div>
+                <div class="card-description">${card.description}</div>
+            `;
+            
+            // Only allow playing special cards during planning phase
+            if (this.turnPhase === 'planning') {
+                cardElement.addEventListener('click', () => this.playSpecialCard(index));
+                cardElement.style.cursor = 'pointer';
+            } else {
+                cardElement.style.opacity = '0.5';
+                cardElement.style.cursor = 'not-allowed';
+            }
+            
+            specialCardsContainer.appendChild(cardElement);
+        });
+    }
+    
+    playSpecialCard(index) {
+        if (index >= this.specialCards.length) return;
+        
+        const card = this.specialCards[index];
+        console.log(`Playing special card: ${card.name}`);
+        
+        // Execute the special card effect
+        this.executeSpecialCard(card);
+        
+        // Remove the card from collection (one-time use)
+        this.specialCards.splice(index, 1);
+        
+        // Update UI
+        this.updateSpecialCardsUI();
+    }
+    
+    executeSpecialCard(card) {
+        switch (card.cardType) {
+            case 'shield':
+                this.playerTank.hasShield = true;
+                console.log('Shield activated - next damage will be blocked');
+                break;
+                
+            case 'repair':
+                this.playerTank.heal(1);
+                console.log('Repair used - healed 1 health');
+                break;
+                
+            case 'doubleMove':
+                // This will be handled in the next move action
+                this.playerTank.hasDoubleMove = true;
+                console.log('Double move activated - next move will be doubled');
+                break;
+                
+            case 'quickShot':
+                // Fire immediately
+                const weapon = this.playerTank.equipment.weapon;
+                const startX = this.playerTank.x + Math.cos(this.playerTank.angle * Math.PI / 180);
+                const startY = this.playerTank.y + Math.sin(this.playerTank.angle * Math.PI / 180);
+                
+                const projectile = new Projectile(
+                    startX, startY, this.playerTank.angle,
+                    weapon.damage, weapon.range, 'player'
+                );
+                
+                projectile.canDestroyWalls = weapon.canDestroyWalls || false;
+                projectile.canShootOverWalls = weapon.canShootOverWalls || false;
+                projectile.maze = this.maze;
+                
+                this.projectiles.push(projectile);
+                console.log('Quick shot fired!');
+                break;
+                
+            case 'emp':
+                this.aiTank.empDisabled = true;
+                this.aiTank.empTimer = 2000; // 2 seconds
+                console.log('EMP used - enemy tank disabled for 2 seconds');
+                break;
+                
+            case 'overcharge':
+                this.playerTank.hasOvercharge = true;
+                console.log('Overcharge activated - next shot will deal double damage');
+                break;
         }
     }
     

@@ -224,7 +224,7 @@ class MoveCard extends Card {
             const newX = tank.x + Math.cos(tank.angle * Math.PI / 180) * direction;
             const newY = tank.y + Math.sin(tank.angle * Math.PI / 180) * direction;
             
-            if (game.maze.isValidPosition(newX, newY)) {
+            if (game.maze.isValidPosition(newX, newY, game)) {
                 tank.moveTo(newX, newY);
             } else {
                 break; // Stop if we hit a wall

@@ -14,52 +14,92 @@
                 <div id="level-info">Level: <span id="level">1</span></div>
                 <div id="score-info">Score: <span id="score">0</span></div>
                 <div id="points-info">Points: <span id="points">0</span></div>
+                <button id="debug-panel-btn">Test Debug Panel</button>
             </div>
         </header>
         
-        <div id="game-area">
-            <div id="game-canvas-container">
-                <canvas id="gameCanvas" width="800" height="600"></canvas>
-                
-                <!-- Arcade-style Game Status Overlay -->
-                <div id="game-status-overlay">
-                    <div class="status-top-bar">
-                        <div class="status-section">
-                            <div class="status-label">PLAYER</div>
-                            <div class="health-display">
-                                <div class="health-bar">
-                                    <div class="health-fill" id="player-health-fill"></div>
-                                </div>
-                                <span class="health-text" id="player-health-text">3/3</span>
-                            </div>
-                        </div>
-                        
-                        <div class="status-section center">
-                            <div class="status-label">TURN</div>
-                            <div class="turn-display" id="turn-display">1/50</div>
-                        </div>
-                        
-                        <div class="status-section">
-                            <div class="status-label">ENEMY</div>
-                            <div class="health-display">
-                                <div class="health-bar">
-                                    <div class="health-fill" id="enemy-health-fill"></div>
-                                </div>
-                                <span class="health-text" id="enemy-health-text">3/3</span>
-                            </div>
+        <!-- Debug Panel -->
+        <div id="debug-panel" class="debug-panel hidden">
+            <h4>Debug Tools</h4>
+            <button id="new-game-btn">New Game</button>
+            <button id="difficulty-btn">Difficulty: Easy</button>
+            <div class="debug-controls">
+                <label><input type="checkbox" id="debug-enabled"> Enable Debug</label><br>
+                <label><input type="checkbox" id="show-grid"> Show Grid</label><br>
+                <label><input type="checkbox" id="show-ai-info"> Show AI Info</label><br>
+                <label><input type="checkbox" id="show-fps"> Show FPS</label><br>
+                <label><input type="checkbox" id="show-tank-positions"> Show Tank Positions</label>
+            </div>
+        </div>
+        
+        <!-- Splash Screen -->
+        <div id="splash-screen">
+            <div class="splash-content">
+                <h1>Tank Battle Arena</h1>
+                <div class="version-info">v9.9</div>
+                <div class="splash-controls">
+                    <div class="difficulty-selector">
+                        <h3>Select Difficulty</h3>
+                        <div class="difficulty-buttons">
+                            <button class="difficulty-btn" data-difficulty="easy">Easy</button>
+                            <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+                            <button class="difficulty-btn" data-difficulty="hard">Hard</button>
                         </div>
                     </div>
-                    
-                    <div class="status-bottom-bar">
-                        <div class="phase-display">
-                            <span class="phase-label">PHASE:</span>
-                            <span class="phase-value" id="phase-display">PLANNING</span>
-                        </div>
+                    <div class="splash-actions">
+                        <button id="start-game-btn" disabled>Start New Game</button>
+                        <button id="load-game-btn">Load Game</button>
                     </div>
                 </div>
             </div>
-            
-            <div id="ui-panel">
+        </div>
+
+        <!-- Game Interface (Hidden initially) -->
+        <div id="game-interface" class="hidden">
+            <div class="game-main-section">
+                <div id="game-canvas-container">
+                    <canvas id="gameCanvas" width="800" height="600"></canvas>
+                    
+                    <!-- Arcade-style Game Status Overlay -->
+                    <div id="game-status-overlay">
+                        <div class="status-top-bar">
+                            <div class="status-section">
+                                <div class="status-label">PLAYER</div>
+                                <div class="health-display">
+                                    <div class="health-bar">
+                                        <div class="health-fill" id="player-health-fill"></div>
+                                    </div>
+                                    <span class="health-text" id="player-health-text">3/3</span>
+                                </div>
+                            </div>
+                            
+                            <div class="status-section center">
+                                <div class="status-label">TURN</div>
+                                <div class="turn-display" id="turn-display">1/50</div>
+                            </div>
+                            
+                            <div class="status-section">
+                                <div class="status-label">ENEMY</div>
+                                <div class="health-display">
+                                    <div class="health-bar">
+                                        <div class="health-fill" id="enemy-health-fill"></div>
+                                    </div>
+                                    <span class="health-text" id="enemy-health-text">3/3</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-bottom-bar">
+                            <div class="phase-display">
+                                <span class="phase-label">PHASE:</span>
+                                <span class="phase-value" id="phase-display">PLANNING</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="right-panel">
+                    <div id="ui-panel">
                 <div id="card-area">
                     <h3>Navigation Cards</h3>
                     <div id="cards-container"></div>
@@ -86,16 +126,16 @@
                     <div id="shop-panel">
                         <h4>Shop</h4>
                         <div id="shop-items"></div>
+                        <button id="shop-btn">Shop</button>
                     </div>
                 </div>
+                
+                <div id="special-cards-panel">
+                    <h3>Special Cards (0/4)</h3>
+                    <div id="special-cards"></div>
+                    <button id="buy-cards-btn">Buy Cards</button>
+                </div>
             </div>
-        </div>
-        
-        <div id="game-controls">
-            <button id="new-game-btn">New Game</button>
-            <button id="difficulty-btn">Difficulty: Easy</button>
-            <button id="shop-btn">Shop</button>
-            <button id="buy-cards-btn">Buy Cards</button>
         </div>
     </div>
     
@@ -126,13 +166,13 @@
         </div>
     </div>
     
-    <script src="js/game.js"></script>
-    <script src="js/maze.js"></script>
-    <script src="js/tank.js"></script>
-    <script src="js/cards.js"></script>
-    <script src="js/ai.js"></script>
-    <script src="js/equipment.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/main.js"></script>
+    <script src="js/game.js?v=9.9"></script>
+    <script src="js/maze.js?v=9.9"></script>
+    <script src="js/tank.js?v=9.9"></script>
+    <script src="js/cards.js?v=9.9"></script>
+    <script src="js/ai.js?v=9.9"></script>
+    <script src="js/equipment.js?v=9.9"></script>
+    <script src="js/ui.js?v=9.9"></script>
+    <script src="js/main.js?v=9.9"></script>
 </body>
 </html>

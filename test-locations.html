@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Tests - Tank Battle Arena</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #e94560;
+            text-shadow: 0 0 10px #e94560;
+        }
+        
+        .test-section {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #ff6b7a;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .test-results {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .test-log {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffff00; }
+        .info { color: #00ffff; }
+        
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 15px;
+            color: white;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .debug-panel h4 {
+            margin: 0 0 10px 0;
+            color: #e94560;
+        }
+        
+        .debug-panel label {
+            display: block;
+            margin: 5px 0;
+        }
+        
+        .debug-panel input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .game-canvas {
+            border: 2px solid #e94560;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .test-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-card {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #e94560;
+        }
+        
+        .summary-stats {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .export-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .export-btn {
+            background: #00ff00;
+            color: black;
+            font-weight: bold;
+        }
+        
+        .export-btn:hover {
+            background: #00cc00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Location Tests - Tank Battle Arena</h1>
+        
+        <div class="test-section">
+            <h2>Interactive Testing Interface</h2>
+            <p>This interface allows you to run comprehensive unit tests for object locations and compare logical positions with GUI representations.</p>
+            
+            <div class="test-buttons">
+                <button id="run-all-tests">🚀 Run All Tests</button>
+                <button id="run-tank-tests">🎯 Tank Position Tests</button>
+                <button id="run-maze-tests">🏗️ Maze Position Tests</button>
+                <button id="run-projectile-tests">💥 Projectile Tests</button>
+                <button id="run-coordinate-tests">📐 Coordinate Mapping Tests</button>
+                <button id="clear-results">🗑️ Clear Results</button>
+            </div>
+            
+            <div class="test-summary" id="test-summary">
+                <div class="summary-card">
+                    <h3>Total Tests</h3>
+                    <div class="summary-stats" id="total-tests">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Passed</h3>
+                    <div class="summary-stats success" id="passed-tests">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Failed</h3>
+                    <div class="summary-stats error" id="failed-tests">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Success Rate</h3>
+                    <div class="summary-stats info" id="success-rate">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div class="test-results">
+                <div class="test-log" id="test-log">
+                    <div class="info">Ready to run tests. Click any test button above to begin.</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Game Visualization</h2>
+            <canvas id="testCanvas" width="800" height="600" class="game-canvas"></canvas>
+            <p><em>Note: The canvas above shows the current game state for visual verification of test results.</em></p>
+        </div>
+        
+        <div class="export-section">
+            <button id="export-results" class="export-btn">📊 Export Test Results (JSON)</button>
+        </div>
+    </div>
+    
+    <!-- Debug Panel -->
+    <div class="debug-panel" id="debug-panel">
+        <h4>Debug Tools</h4>
+        <label><input type="checkbox" id="debug-enabled"> Enable Debug</label>
+        <label><input type="checkbox" id="show-grid"> Show Grid</label>
+
+        <label><input type="checkbox" id="show-ai"> Show AI Info</label>
+        <label><input type="checkbox" id="show-fps"> Show FPS</label>
+        <label><input type="checkbox" id="show-positions"> Show Tank Positions</label>
+        <button id="god-mode">God Mode</button>
+        <button id="kill-enemy">Kill Enemy</button>
+        <button id="add-points">Add 1000 Points</button>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/game.js"></script>
+    <script src="js/maze.js"></script>
+    <script src="js/tank.js"></script>
+    <script src="js/cards.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/equipment.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/location-tests.js"></script>
+    
+    <script>
+        // Initialize test interface
+        let locationTests = null;
+        let testGame = null;
+        let testUI = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Location Tests Interface - Initializing...');
+            
+            try {
+                // Initialize test game instance
+                testGame = new Game();
+                testUI = new UI(testGame);
+                locationTests = new LocationTests(testGame);
+                
+                console.log('Test interface initialized successfully');
+                
+                // Set up event listeners
+                setupEventListeners();
+                
+                // Initial render
+                renderGame();
+                
+            } catch (error) {
+                console.error('Error initializing test interface:', error);
+                logTest('Error initializing test interface: ' + error.message, 'error');
+            }
+        });
+        
+        function setupEventListeners() {
+            document.getElementById('run-all-tests').addEventListener('click', () => {
+                locationTests.runAllLocationTests();
+            });
+            
+            document.getElementById('run-tank-tests').addEventListener('click', () => {
+                locationTests.runTankPositionTests();
+            });
+            
+            document.getElementById('run-maze-tests').addEventListener('click', () => {
+                locationTests.runMazePositionTests();
+            });
+            
+            document.getElementById('run-projectile-tests').addEventListener('click', () => {
+                locationTests.runProjectilePositionTests();
+            });
+            
+            document.getElementById('run-coordinate-tests').addEventListener('click', () => {
+                locationTests.runCoordinateMappingTests();
+            });
+            
+            document.getElementById('clear-results').addEventListener('click', () => {
+                locationTests.clearResults();
+                updateTestSummary();
+            });
+            
+            document.getElementById('export-results').addEventListener('click', () => {
+                exportTestResults();
+            });
+            
+            // Debug panel event listeners
+            document.getElementById('debug-enabled').addEventListener('change', (e) => {
+                const debugPanel = document.getElementById('debug-panel');
+                debugPanel.style.display = e.target.checked ? 'block' : 'none';
+            });
+            
+            document.getElementById('show-positions').addEventListener('change', (e) => {
+                if (testGame && testGame.debugTools) {
+                    testGame.debugTools.showPositions = e.target.checked;
+                }
+            });
+        }
+        
+        function renderGame() {
+            const canvas = document.getElementById('testCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Render game
+            if (testGame) {
+                testGame.render(ctx);
+                
+                // Render debug tools
+                if (testGame.debugTools) {
+                    testGame.debugTools.render(ctx);
+                }
+            }
+        }
+        
+        function logTest(message, type = 'info') {
+            const testLog = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            testLog.appendChild(logEntry);
+            testLog.scrollTop = testLog.scrollHeight;
+        }
+        
+        function updateTestSummary() {
+            const results = locationTests.getTestSummary();
+            document.getElementById('total-tests').textContent = results.total;
+            document.getElementById('passed-tests').textContent = results.passed;
+            document.getElementById('failed-tests').textContent = results.failed;
+            document.getElementById('success-rate').textContent = results.successRate + '%';
+        }
+        
+        function exportTestResults() {
+            const report = locationTests.generateTestReport();
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `location-tests-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            logTest('Test results exported successfully', 'success');
+        }
+        
+        // Override LocationTests logging to update our interface
+        const originalLogTest = LocationTests.prototype.logTest;
+        LocationTests.prototype.logTest = function(message, type = 'info') {
+            originalLogTest.call(this, message, type);
+            logTest(message, type);
+            updateTestSummary();
+            renderGame();
+        };
+        
+        // Auto-refresh game visualization
+        setInterval(renderGame, 1000 / 30); // 30 FPS
+    </script>
+</body>
+</html>

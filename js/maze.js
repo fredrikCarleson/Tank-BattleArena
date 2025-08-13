@@ -108,8 +108,33 @@ class Maze {
         return this.grid[gridY][gridX] === 1;
     }
     
-    isValidPosition(x, y) {
-        return !this.isWall(x, y);
+    isValidPosition(x, y, game = null) {
+        // Check if position is a wall
+        if (this.isWall(x, y)) {
+            return false;
+        }
+        
+        // Check if position is occupied by a tank (if game is provided)
+        if (game && game.playerTank && game.aiTank) {
+            const gridX = Math.floor(x);
+            const gridY = Math.floor(y);
+            
+            // Check if player tank is at this position
+            const playerGridX = Math.floor(game.playerTank.x);
+            const playerGridY = Math.floor(game.playerTank.y);
+            if (gridX === playerGridX && gridY === playerGridY) {
+                return false;
+            }
+            
+            // Check if AI tank is at this position
+            const aiGridX = Math.floor(game.aiTank.x);
+            const aiGridY = Math.floor(game.aiTank.y);
+            if (gridX === aiGridX && gridY === aiGridY) {
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     destroyWall(x, y) {

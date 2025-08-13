@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Panel Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            margin: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #ff6b7a;
+        }
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #e94560;
+            font-size: 12px;
+            display: none;
+            z-index: 1000;
+        }
+        .debug-panel h4 {
+            margin: 0 0 10px 0;
+            color: #e94560;
+        }
+        .debug-panel label {
+            display: block;
+            margin: 5px 0;
+        }
+        .debug-panel input[type="checkbox"] {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Debug Panel Test</h1>
+        <p>This is a simple test to verify the debug panel is working correctly.</p>
+        
+        <button onclick="toggleDebug()">Toggle Debug Panel</button>
+        <button onclick="checkDebugContent()">Check Debug Content</button>
+        <button onclick="testShowPositions()">Test Show Positions</button>
+        
+        <div id="debug-panel" class="debug-panel">
+            <h4>Debug Tools v2.0</h4>
+            <label><input type="checkbox" id="debug-enabled"> Enable Debug</label><br>
+            <label><input type="checkbox" id="show-grid"> Show Grid</label><br>
+            <label><input type="checkbox" id="show-ai"> Show AI Info</label><br>
+            <label><input type="checkbox" id="show-fps"> Show FPS</label><br>
+            <label><input type="checkbox" id="show-positions"> Show Tank Positions</label><br>
+            <button id="god-mode">God Mode</button><br>
+            <button id="kill-enemy">Kill Enemy</button><br>
+            <button id="add-points">Add 1000 Points</button>
+        </div>
+        
+        <div id="output" style="margin-top: 20px; padding: 10px; background: #333; border-radius: 5px;">
+            <h3>Debug Output:</h3>
+            <div id="debug-output"></div>
+        </div>
+    </div>
+    
+    <script>
+        function log(message) {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+        
+        function toggleDebug() {
+            const debugPanel = document.getElementById('debug-panel');
+            debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+            log(`Debug panel toggled. Display: ${debugPanel.style.display}`);
+        }
+        
+        function checkDebugContent() {
+            const debugPanel = document.getElementById('debug-panel');
+            log(`Debug panel content: ${debugPanel.innerHTML}`);
+            
+            // Check for specific elements
+            const showPositions = document.getElementById('show-positions');
+            const showPaths = document.querySelector('input[type="checkbox"]:not([id])');
+            
+            if (showPositions) {
+                log('✅ Show Positions checkbox found');
+            } else {
+                log('❌ Show Positions checkbox NOT found');
+            }
+            
+            if (showPaths) {
+                log('❌ Found unchecked checkbox (might be Show Paths)');
+            } else {
+                log('✅ No unchecked checkboxes found');
+            }
+        }
+        
+        function testShowPositions() {
+            const showPositions = document.getElementById('show-positions');
+            if (showPositions) {
+                showPositions.checked = !showPositions.checked;
+                log(`Show Positions toggled: ${showPositions.checked}`);
+            } else {
+                log('❌ Show Positions checkbox not found');
+            }
+        }
+        
+        // Set up event listeners
+        document.getElementById('debug-enabled').addEventListener('change', (e) => {
+            log(`Debug enabled: ${e.target.checked}`);
+        });
+        
+        document.getElementById('show-positions').addEventListener('change', (e) => {
+            log(`Show Positions: ${e.target.checked}`);
+        });
+        
+        // Initial log
+        log('Debug test page loaded');
+        log('Debug panel should show: Enable Debug, Show Grid, Show AI Info, Show FPS, Show Tank Positions');
+    </script>
+</body>
+</html>
+

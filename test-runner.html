@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Test Runner - Tank Battle Arena</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #e94560;
+            text-shadow: 0 0 10px #e94560;
+        }
+        
+        .test-section {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            align-items: center;
+        }
+        
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #ff6b7a;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-container {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e94560;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 12px;
+        }
+        
+        .test-results {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .test-log {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .warning { color: #ffff00; }
+        .info { color: #00ffff; }
+        
+        .test-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .test-category {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        
+        .test-category h3 {
+            margin: 0 0 10px 0;
+            color: #e94560;
+            border-bottom: 1px solid #e94560;
+            padding-bottom: 5px;
+        }
+        
+        .test-item {
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        
+        .test-item.passed {
+            background: rgba(0, 255, 0, 0.2);
+            border-left: 3px solid #00ff00;
+        }
+        
+        .test-item.failed {
+            background: rgba(255, 0, 0, 0.2);
+            border-left: 3px solid #ff0000;
+        }
+        
+        .test-item.running {
+            background: rgba(255, 255, 0, 0.2);
+            border-left: 3px solid #ffff00;
+        }
+        
+        .keyboard-shortcuts {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .keyboard-shortcuts h3 {
+            margin: 0 0 10px 0;
+            color: #e94560;
+        }
+        
+        .shortcut {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .key {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .export-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .export-btn {
+            background: #00ff00;
+            color: black;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 15px 30px;
+        }
+        
+        .export-btn:hover {
+            background: #00cc00;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-ready { background: #00ff00; }
+        .status-running { background: #ffff00; }
+        .status-complete { background: #00ffff; }
+        .status-error { background: #ff0000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Automated Test Runner - Tank Battle Arena</h1>
+        
+        <div class="test-section">
+            <h2>Test Execution Control</h2>
+            <p>This automated test runner executes comprehensive unit tests for object locations and provides detailed reporting.</p>
+            
+            <div class="control-panel">
+                <button id="run-all-tests">🚀 Run All Tests</button>
+                <button id="run-tank-tests">🎯 Tank Tests</button>
+                <button id="run-maze-tests">🏗️ Maze Tests</button>
+                <button id="run-projectile-tests">💥 Projectile Tests</button>
+                <button id="run-coordinate-tests">📐 Coordinate Tests</button>
+                <button id="stop-tests" disabled>⏹️ Stop Tests</button>
+                <button id="clear-results">🗑️ Clear Results</button>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">Ready</div>
+                </div>
+            </div>
+            
+            <div class="status-indicator" id="status-indicator"></div>
+            <span id="status-text">Ready to run tests</span>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div class="test-results">
+                <div class="test-log" id="test-log">
+                    <div class="info">Automated test runner ready. Press 'R' to run all tests or use the buttons above.</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Detailed Test Results</h2>
+            <div class="test-details" id="test-details">
+                <div class="test-category">
+                    <h3>🎯 Tank Position Tests</h3>
+                    <div id="tank-tests-list">
+                        <div class="info">No tests run yet</div>
+                    </div>
+                </div>
+                
+                <div class="test-category">
+                    <h3>🏗️ Maze Position Tests</h3>
+                    <div id="maze-tests-list">
+                        <div class="info">No tests run yet</div>
+                    </div>
+                </div>
+                
+                <div class="test-category">
+                    <h3>💥 Projectile Tests</h3>
+                    <div id="projectile-tests-list">
+                        <div class="info">No tests run yet</div>
+                    </div>
+                </div>
+                
+                <div class="test-category">
+                    <h3>📐 Coordinate Mapping Tests</h3>
+                    <div id="coordinate-tests-list">
+                        <div class="info">No tests run yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="keyboard-shortcuts">
+            <h3>⌨️ Keyboard Shortcuts</h3>
+            <div class="shortcut">
+                <span class="key">R</span>
+                <span>Run all tests</span>
+            </div>
+            <div class="shortcut">
+                <span class="key">T</span>
+                <span>Run tank tests only</span>
+            </div>
+            <div class="shortcut">
+                <span class="key">M</span>
+                <span>Run maze tests only</span>
+            </div>
+            <div class="shortcut">
+                <span class="key">P</span>
+                <span>Run projectile tests only</span>
+            </div>
+            <div class="shortcut">
+                <span class="key">C</span>
+                <span>Run coordinate tests only</span>
+            </div>
+            <div class="shortcut">
+                <span class="key">S</span>
+                <span>Stop running tests</span>
+            </div>
+            <div class="shortcut">
+                <span class="key">E</span>
+                <span>Export results</span>
+            </div>
+        </div>
+        
+        <div class="export-section">
+            <button id="export-results" class="export-btn">📊 Export Test Results (JSON)</button>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/game.js"></script>
+    <script src="js/maze.js"></script>
+    <script src="js/tank.js"></script>
+    <script src="js/cards.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/equipment.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/location-tests.js"></script>
+    
+    <script>
+        // Test runner state
+        let locationTests = null;
+        let testGame = null;
+        let isRunning = false;
+        let currentTestSuite = null;
+        
+        // Initialize test runner
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Automated Test Runner - Initializing...');
+            
+            try {
+                // Initialize test game instance
+                testGame = new Game();
+                locationTests = new LocationTests(testGame);
+                
+                console.log('Test runner initialized successfully');
+                
+                // Set up event listeners
+                setupEventListeners();
+                setupKeyboardShortcuts();
+                
+                updateStatus('ready', 'Ready to run tests');
+                
+            } catch (error) {
+                console.error('Error initializing test runner:', error);
+                logTest('Error initializing test runner: ' + error.message, 'error');
+                updateStatus('error', 'Initialization failed');
+            }
+        });
+        
+        function setupEventListeners() {
+            document.getElementById('run-all-tests').addEventListener('click', () => {
+                runTestSuite('all');
+            });
+            
+            document.getElementById('run-tank-tests').addEventListener('click', () => {
+                runTestSuite('tank');
+            });
+            
+            document.getElementById('run-maze-tests').addEventListener('click', () => {
+                runTestSuite('maze');
+            });
+            
+            document.getElementById('run-projectile-tests').addEventListener('click', () => {
+                runTestSuite('projectile');
+            });
+            
+            document.getElementById('run-coordinate-tests').addEventListener('click', () => {
+                runTestSuite('coordinate');
+            });
+            
+            document.getElementById('stop-tests').addEventListener('click', () => {
+                stopTests();
+            });
+            
+            document.getElementById('clear-results').addEventListener('click', () => {
+                clearResults();
+            });
+            
+            document.getElementById('export-results').addEventListener('click', () => {
+                exportTestResults();
+            });
+        }
+        
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                
+                switch (e.key.toLowerCase()) {
+                    case 'r':
+                        e.preventDefault();
+                        if (!isRunning) runTestSuite('all');
+                        break;
+                    case 't':
+                        e.preventDefault();
+                        if (!isRunning) runTestSuite('tank');
+                        break;
+                    case 'm':
+                        e.preventDefault();
+                        if (!isRunning) runTestSuite('maze');
+                        break;
+                    case 'p':
+                        e.preventDefault();
+                        if (!isRunning) runTestSuite('projectile');
+                        break;
+                    case 'c':
+                        e.preventDefault();
+                        if (!isRunning) runTestSuite('coordinate');
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        if (isRunning) stopTests();
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportTestResults();
+                        break;
+                }
+            });
+        }
+        
+        async function runTestSuite(suite) {
+            if (isRunning) return;
+            
+            isRunning = true;
+            currentTestSuite = suite;
+            updateStatus('running', `Running ${suite} tests...`);
+            updateProgress(0, 'Starting tests...');
+            
+            // Update UI
+            document.getElementById('run-all-tests').disabled = true;
+            document.getElementById('run-tank-tests').disabled = true;
+            document.getElementById('run-maze-tests').disabled = true;
+            document.getElementById('run-projectile-tests').disabled = true;
+            document.getElementById('run-coordinate-tests').disabled = true;
+            document.getElementById('stop-tests').disabled = false;
+            
+            try {
+                // Clear previous results
+                locationTests.clearResults();
+                clearTestDetails();
+                
+                // Run tests based on suite
+                switch (suite) {
+                    case 'all':
+                        await runAllTests();
+                        break;
+                    case 'tank':
+                        await runTankTests();
+                        break;
+                    case 'maze':
+                        await runMazeTests();
+                        break;
+                    case 'projectile':
+                        await runProjectileTests();
+                        break;
+                    case 'coordinate':
+                        await runCoordinateTests();
+                        break;
+                }
+                
+                updateStatus('complete', 'Tests completed');
+                updateProgress(100, 'Tests completed');
+                
+            } catch (error) {
+                console.error('Test execution error:', error);
+                logTest('Test execution error: ' + error.message, 'error');
+                updateStatus('error', 'Test execution failed');
+            } finally {
+                isRunning = false;
+                currentTestSuite = null;
+                
+                // Reset UI
+                document.getElementById('run-all-tests').disabled = false;
+                document.getElementById('run-tank-tests').disabled = false;
+                document.getElementById('run-maze-tests').disabled = false;
+                document.getElementById('run-projectile-tests').disabled = false;
+                document.getElementById('run-coordinate-tests').disabled = false;
+                document.getElementById('stop-tests').disabled = true;
+            }
+        }
+        
+        async function runAllTests() {
+            const totalTests = 4;
+            let completed = 0;
+            
+            // Tank tests
+            updateProgress(completed / totalTests * 100, 'Running tank tests...');
+            locationTests.runTankPositionTests();
+            await delay(100);
+            completed++;
+            
+            // Maze tests
+            updateProgress(completed / totalTests * 100, 'Running maze tests...');
+            locationTests.runMazePositionTests();
+            await delay(100);
+            completed++;
+            
+            // Projectile tests
+            updateProgress(completed / totalTests * 100, 'Running projectile tests...');
+            locationTests.runProjectilePositionTests();
+            await delay(100);
+            completed++;
+            
+            // Coordinate tests
+            updateProgress(completed / totalTests * 100, 'Running coordinate tests...');
+            locationTests.runCoordinateMappingTests();
+            await delay(100);
+            completed++;
+            
+            updateTestDetails();
+        }
+        
+        async function runTankTests() {
+            updateProgress(50, 'Running tank tests...');
+            locationTests.runTankPositionTests();
+            await delay(100);
+            updateTestDetails();
+        }
+        
+        async function runMazeTests() {
+            updateProgress(50, 'Running maze tests...');
+            locationTests.runMazePositionTests();
+            await delay(100);
+            updateTestDetails();
+        }
+        
+        async function runProjectileTests() {
+            updateProgress(50, 'Running projectile tests...');
+            locationTests.runProjectilePositionTests();
+            await delay(100);
+            updateTestDetails();
+        }
+        
+        async function runCoordinateTests() {
+            updateProgress(50, 'Running coordinate tests...');
+            locationTests.runCoordinateMappingTests();
+            await delay(100);
+            updateTestDetails();
+        }
+        
+        function stopTests() {
+            if (!isRunning) return;
+            
+            isRunning = false;
+            currentTestSuite = null;
+            updateStatus('ready', 'Tests stopped by user');
+            updateProgress(0, 'Tests stopped');
+            
+            // Reset UI
+            document.getElementById('run-all-tests').disabled = false;
+            document.getElementById('run-tank-tests').disabled = false;
+            document.getElementById('run-maze-tests').disabled = false;
+            document.getElementById('run-projectile-tests').disabled = false;
+            document.getElementById('run-coordinate-tests').disabled = false;
+            document.getElementById('stop-tests').disabled = true;
+            
+            logTest('Tests stopped by user', 'warning');
+        }
+        
+        function clearResults() {
+            locationTests.clearResults();
+            clearTestDetails();
+            updateStatus('ready', 'Results cleared');
+            updateProgress(0, 'Ready');
+            logTest('Test results cleared', 'info');
+        }
+        
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            indicator.className = 'status-indicator status-' + status;
+            statusText.textContent = text;
+        }
+        
+        function updateProgress(percent, text) {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            
+            progressFill.style.width = percent + '%';
+            progressText.textContent = text;
+        }
+        
+        function logTest(message, type = 'info') {
+            const testLog = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            testLog.appendChild(logEntry);
+            testLog.scrollTop = testLog.scrollHeight;
+        }
+        
+        function updateTestDetails() {
+            const results = locationTests.getTestSummary();
+            
+            // Update tank tests
+            updateTestCategory('tank-tests-list', results.tankTests || []);
+            
+            // Update maze tests
+            updateTestCategory('maze-tests-list', results.mazeTests || []);
+            
+            // Update projectile tests
+            updateTestCategory('projectile-tests-list', results.projectileTests || []);
+            
+            // Update coordinate tests
+            updateTestCategory('coordinate-tests-list', results.coordinateTests || []);
+        }
+        
+        function updateTestCategory(containerId, tests) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            if (tests.length === 0) {
+                container.innerHTML = '<div class="info">No tests run yet</div>';
+                return;
+            }
+            
+            tests.forEach(test => {
+                const testItem = document.createElement('div');
+                testItem.className = `test-item ${test.status}`;
+                testItem.textContent = test.name;
+                container.appendChild(testItem);
+            });
+        }
+        
+        function clearTestDetails() {
+            document.getElementById('tank-tests-list').innerHTML = '<div class="info">No tests run yet</div>';
+            document.getElementById('maze-tests-list').innerHTML = '<div class="info">No tests run yet</div>';
+            document.getElementById('projectile-tests-list').innerHTML = '<div class="info">No tests run yet</div>';
+            document.getElementById('coordinate-tests-list').innerHTML = '<div class="info">No tests run yet</div>';
+        }
+        
+        function exportTestResults() {
+            const report = locationTests.generateTestReport();
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `automated-tests-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            logTest('Test results exported successfully', 'success');
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Override LocationTests logging to update our interface
+        const originalLogTest = LocationTests.prototype.logTest;
+        LocationTests.prototype.logTest = function(message, type = 'info') {
+            originalLogTest.call(this, message, type);
+            logTest(message, type);
+        };
+    </script>
+</body>
+</html>

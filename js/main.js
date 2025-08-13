@@ -221,8 +221,8 @@ class DebugTools {
         this.game = game;
         this.enabled = false;
         this.showGrid = false;
-        this.showPaths = false;
         this.showAI = false;
+        this.showPositions = false;
         
         this.setupDebugControls();
     }
@@ -246,18 +246,20 @@ class DebugTools {
         `;
         
         debugPanel.innerHTML = `
-            <h4>Debug Tools</h4>
+            <h4>Debug Tools v5.0 - TANK POSITIONS FIXED!</h4>
             <label><input type="checkbox" id="debug-enabled"> Enable Debug</label><br>
             <label><input type="checkbox" id="show-grid"> Show Grid</label><br>
-            <label><input type="checkbox" id="show-paths"> Show Paths</label><br>
             <label><input type="checkbox" id="show-ai"> Show AI Info</label><br>
             <label><input type="checkbox" id="show-fps"> Show FPS</label><br>
+            <label><input type="checkbox" id="show-positions"> Show Tank Positions</label><br>
             <button id="god-mode">God Mode</button><br>
             <button id="kill-enemy">Kill Enemy</button><br>
             <button id="add-points">Add 1000 Points</button>
         `;
         
         document.body.appendChild(debugPanel);
+        console.log('Debug panel created with options:', debugPanel.innerHTML);
+        console.log('✅ Show Tank Positions option should be visible now!');
         
         // Event listeners
         document.getElementById('debug-enabled').addEventListener('change', (e) => {
@@ -269,16 +271,16 @@ class DebugTools {
             this.showGrid = e.target.checked;
         });
         
-        document.getElementById('show-paths').addEventListener('change', (e) => {
-            this.showPaths = e.target.checked;
-        });
-        
         document.getElementById('show-ai').addEventListener('change', (e) => {
             this.showAI = e.target.checked;
         });
         
         document.getElementById('show-fps').addEventListener('change', (e) => {
             window.showFPS = e.target.checked;
+        });
+        
+        document.getElementById('show-positions').addEventListener('change', (e) => {
+            this.showPositions = e.target.checked;
         });
         
         document.getElementById('god-mode').addEventListener('click', () => {
@@ -351,6 +353,66 @@ class DebugTools {
                 game.aiTank.x * game.maze.cellSize, 
                 game.aiTank.y * game.maze.cellSize - 15);
         }
+        
+        // Show tank positions
+        if (this.showPositions) {
+            console.log('Rendering tank positions...');
+            console.log('Player tank:', game.playerTank ? `(${game.playerTank.x}, ${game.playerTank.y})` : 'null');
+            console.log('AI tank:', game.aiTank ? `(${game.aiTank.x}, ${game.aiTank.y})` : 'null');
+            
+            // Draw a very obvious test rectangle to verify rendering is working
+            ctx.fillStyle = 'rgba(255, 0, 255, 0.5)';
+            ctx.fillRect(10, 10, 100, 50);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px monospace';
+            ctx.fillText('DEBUG RENDERING WORKS!', 15, 35);
+            
+            // Draw tank positions at the bottom of the screen for better visibility
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillRect(10, 550, 780, 40);
+            
+            ctx.font = 'bold 14px monospace';
+            
+            if (game.playerTank) {
+                const text1 = `Player: (${game.playerTank.x.toFixed(2)}, ${game.playerTank.y.toFixed(2)})`;
+                const text2 = `Angle: ${game.playerTank.angle.toFixed(1)}°`;
+                
+                // Draw text
+                ctx.fillStyle = '#00ff00';
+                ctx.fillText(text1, 20, 570);
+                ctx.fillText(text2, 20, 585);
+            }
+            
+            if (game.aiTank) {
+                const text1 = `Enemy: (${game.aiTank.x.toFixed(2)}, ${game.aiTank.y.toFixed(2)})`;
+                const text2 = `Angle: ${game.aiTank.angle.toFixed(1)}°`;
+                
+                // Draw text on the right side
+                const textWidth1 = ctx.measureText(text1).width;
+                const textWidth2 = ctx.measureText(text2).width;
+                const maxWidth = Math.max(textWidth1, textWidth2);
+                const rightX = 780 - maxWidth;
+                
+                ctx.fillStyle = '#ff0000';
+                ctx.fillText(text1, rightX, 570);
+                ctx.fillText(text2, rightX, 585);
+            }
+            
+            // Show projectile positions in the middle
+            if (game.projectiles.length > 0) {
+                let projText = 'Projectiles: ';
+                game.projectiles.forEach((projectile, index) => {
+                    if (index > 0) projText += ', ';
+                    projText += `P${index}(${projectile.x.toFixed(1)}, ${projectile.y.toFixed(1)})`;
+                });
+                
+                const projWidth = ctx.measureText(projText).width;
+                const centerX = (800 - projWidth) / 2;
+                
+                ctx.fillStyle = '#ffff00';
+                ctx.fillText(projText, centerX, 570);
+            }
+        }
     }
 }
 
@@ -365,6 +427,8 @@ setTimeout(() => {
         
         // Initialize debug tools
         const debugTools = new DebugTools(game);
+        game.debugTools = debugTools;
+        console.log('Debug tools initialized and attached to game');
         
         // Add save/load buttons to UI
         const saveLoadContainer = document.createElement('div');
@@ -404,6 +468,8 @@ setTimeout(() => {
         setTimeout(() => {
             ui.showNotification('Press F12 for debug tools', 'info', 3000);
         }, 2000);
+        
+
     }
 }, 1000);
 

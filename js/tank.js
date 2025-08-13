@@ -10,15 +10,9 @@ class Tank {
         this.maxHealth = 3;
         this.health = this.maxHealth;
         
-        // Equipment
+        // Equipment - will be set up properly after construction
         this.equipment = {
-            weapon: {
-                name: 'Basic Cannon',
-                damage: 1,
-                range: 5,
-                canShootOverWalls: false,
-                canDestroyWalls: true
-            },
+            weapon: null,
             armor: null
         };
         
@@ -26,6 +20,10 @@ class Tank {
         this.size = 0.8; // tank size relative to cell
         this.color = owner === 'player' ? '#00ff00' : '#ff0000';
         this.turretColor = owner === 'player' ? '#008800' : '#880000';
+        
+        // Sprite-based visual system
+        this.bodySprite = this.getDefaultBodySprite();
+        this.turretSprite = this.getDefaultTurretSprite();
         
         // Animation properties
         this.targetX = x;
@@ -40,6 +38,143 @@ class Tank {
         
         // Teleport flag
         this.isTeleporting = false;
+    }
+    
+    getDefaultBodySprite() {
+        return {
+            type: 'basic',
+            color: this.color,
+            hasArmorPlates: false,
+            armorColor: null,
+            armorGlow: null,
+            extraArmor: false,
+            energyField: false,
+            energyColor: null
+        };
+    }
+    
+    getDefaultTurretSprite() {
+        return {
+            type: 'basic',
+            cannonLength: 0.8,
+            cannonWidth: 0.2,
+            cannonColor: '#666',
+            cannonGlow: null,
+            turretColor: this.turretColor
+        };
+    }
+    
+    updateSprites() {
+        const weapon = this.equipment.weapon;
+        const armor = this.equipment.armor;
+        
+        // Update turret sprite based on weapon
+        if (weapon) {
+            switch (weapon.id) {
+                case 'heavyCannon':
+                    this.turretSprite = {
+                        type: 'heavy',
+                        cannonLength: 1.2,
+                        cannonWidth: 0.3,
+                        cannonColor: '#444',
+                        cannonGlow: '#888',
+                        turretColor: this.turretColor
+                    };
+                    break;
+                case 'missileLauncher':
+                    this.turretSprite = {
+                        type: 'missile',
+                        cannonLength: 0.6,
+                        cannonWidth: 0.4,
+                        cannonColor: '#8B4513',
+                        cannonGlow: '#D2691E',
+                        turretColor: this.turretColor
+                    };
+                    break;
+                case 'laserCannon':
+                    this.turretSprite = {
+                        type: 'laser',
+                        cannonLength: 1.0,
+                        cannonWidth: 0.15,
+                        cannonColor: '#00ffff',
+                        cannonGlow: '#00ffff',
+                        turretColor: this.turretColor
+                    };
+                    break;
+                case 'plasmaCannon':
+                    this.turretSprite = {
+                        type: 'plasma',
+                        cannonLength: 1.1,
+                        cannonWidth: 0.35,
+                        cannonColor: '#800080',
+                        cannonGlow: '#FF00FF',
+                        turretColor: this.turretColor
+                    };
+                    break;
+                default:
+                    this.turretSprite = this.getDefaultTurretSprite();
+            }
+        } else {
+            this.turretSprite = this.getDefaultTurretSprite();
+        }
+        
+        // Update body sprite based on armor
+        if (armor) {
+            switch (armor.id) {
+                case 'lightArmor':
+                    this.bodySprite = {
+                        type: 'light',
+                        color: this.color,
+                        hasArmorPlates: true,
+                        armorColor: this.owner === 'player' ? '#00aa00' : '#aa0000',
+                        armorGlow: null,
+                        extraArmor: false,
+                        energyField: false,
+                        energyColor: null
+                    };
+                    break;
+                case 'heavyArmor':
+                    this.bodySprite = {
+                        type: 'heavy',
+                        color: this.color,
+                        hasArmorPlates: true,
+                        armorColor: this.owner === 'player' ? '#008800' : '#880000',
+                        armorGlow: this.owner === 'player' ? '#00ff00' : '#ff0000',
+                        extraArmor: true,
+                        energyField: false,
+                        energyColor: null
+                    };
+                    break;
+                case 'reactiveArmor':
+                    this.bodySprite = {
+                        type: 'reactive',
+                        color: this.color,
+                        hasArmorPlates: true,
+                        armorColor: '#FFD700',
+                        armorGlow: '#FFA500',
+                        extraArmor: false,
+                        energyField: true,
+                        energyColor: '#FFD700'
+                    };
+                    break;
+                case 'stealthArmor':
+                    this.bodySprite = {
+                        type: 'stealth',
+                        color: this.color,
+                        hasArmorPlates: true,
+                        armorColor: '#2F4F4F',
+                        armorGlow: '#708090',
+                        extraArmor: false,
+                        energyField: true,
+                        energyColor: '#708090'
+                    };
+                    break;
+                default:
+                    this.bodySprite = this.getDefaultBodySprite();
+            }
+        } else {
+            this.bodySprite = this.getDefaultBodySprite();
+        }
     }
     
     update(deltaTime) {
@@ -161,9 +296,32 @@ class Tank {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(-radius + 2, -radius + 2, radius * 2, radius * 2);
         
+        // Draw tank body using body sprite
+        this.drawBody(ctx, radius);
+        
+        // Draw tank details (tracks, identification, armor plates)
+        this.drawTankDetails(ctx, radius);
+        
+        // Draw turret using turret sprite (always on top)
+        this.drawTurret(ctx, radius);
+        
+        ctx.restore();
+        
+        // Draw stun effect
+        if (this.stunned) {
+            this.drawStunEffect(ctx, centerX, centerY, radius);
+        }
+        
+        // Draw health indicator
+        this.drawHealthIndicator(ctx, centerX, centerY, radius);
+    }
+    
+    drawBody(ctx, radius) {
+        const sprite = this.bodySprite;
+        
         // Draw tank body with gradient
         const bodyGradient = ctx.createLinearGradient(-radius, -radius, radius, radius);
-        bodyGradient.addColorStop(0, this.color);
+        bodyGradient.addColorStop(0, sprite.color);
         bodyGradient.addColorStop(0.7, this.owner === 'player' ? '#00cc00' : '#cc0000');
         bodyGradient.addColorStop(1, this.owner === 'player' ? '#008800' : '#880000');
         
@@ -181,10 +339,14 @@ class Tank {
         ctx.shadowBlur = 5;
         ctx.strokeRect(-radius, -radius, radius * 2, radius * 2);
         ctx.shadowBlur = 0;
+    }
+    
+    drawTurret(ctx, radius) {
+        const sprite = this.turretSprite;
         
         // Draw turret with gradient
         const turretGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 0.6);
-        turretGradient.addColorStop(0, this.turretColor);
+        turretGradient.addColorStop(0, sprite.turretColor);
         turretGradient.addColorStop(1, this.owner === 'player' ? '#006600' : '#660000');
         
         ctx.fillStyle = turretGradient;
@@ -196,34 +358,49 @@ class Tank {
         ctx.lineWidth = 2;
         ctx.strokeRect(-turretSize/2, -turretSize/2, turretSize, turretSize);
         
-        // Draw cannon with metallic effect
-        const cannonGradient = ctx.createLinearGradient(0, -radius * 0.1, radius * 0.8, radius * 0.1);
-        cannonGradient.addColorStop(0, '#666');
-        cannonGradient.addColorStop(0.5, '#999');
-        cannonGradient.addColorStop(1, '#333');
+        // Draw cannon
+        this.drawCannon(ctx, radius);
+    }
+    
+    drawCannon(ctx, radius) {
+        const props = this.turretSprite;
+        const cannonLength = radius * props.cannonLength;
+        const cannonWidth = radius * props.cannonWidth;
+        
+        // Draw cannon glow if specified
+        if (props.cannonGlow) {
+            ctx.shadowColor = props.cannonGlow;
+            ctx.shadowBlur = 8;
+        }
+        
+        // Draw cannon with gradient
+        const cannonGradient = ctx.createLinearGradient(0, -cannonWidth/2, cannonLength, cannonWidth/2);
+        cannonGradient.addColorStop(0, props.cannonColor);
+        cannonGradient.addColorStop(0.5, this.lightenColor(props.cannonColor, 0.3));
+        cannonGradient.addColorStop(1, this.darkenColor(props.cannonColor, 0.3));
         
         ctx.fillStyle = cannonGradient;
-        ctx.fillRect(0, -radius * 0.1, radius * 0.8, radius * 0.2);
+        ctx.fillRect(0, -cannonWidth/2, cannonLength, cannonWidth);
+        
+        // Reset shadow
+        ctx.shadowBlur = 0;
         
         // Draw cannon highlight
         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.fillRect(0, -radius * 0.1, radius * 0.8, radius * 0.08);
+        ctx.fillRect(0, -cannonWidth/2, cannonLength, cannonWidth * 0.4);
         
-        // Draw tank details
-        this.drawTankDetails(ctx, radius);
-        
-        ctx.restore();
-        
-        // Draw stun effect
-        if (this.stunned) {
-            this.drawStunEffect(ctx, centerX, centerY, radius);
-        }
-        
-        // Draw health indicator
-        this.drawHealthIndicator(ctx, centerX, centerY, radius);
+        // Draw cannon outline
+        ctx.strokeStyle = this.darkenColor(props.cannonColor, 0.5);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, -cannonWidth/2, cannonLength, cannonWidth);
     }
     
     drawTankDetails(ctx, radius) {
+        // Draw energy field effect if present
+        if (this.bodySprite.energyField) {
+            this.drawEnergyField(ctx, radius);
+        }
+        
         // Draw tank tracks with metallic effect
         const trackGradient = ctx.createLinearGradient(-radius, 0, radius, 0);
         trackGradient.addColorStop(0, '#333');
@@ -257,14 +434,75 @@ class Tank {
         ctx.fillText(this.owner === 'player' ? 'P' : 'E', 0, 0);
         ctx.shadowBlur = 0;
         
-        // Draw tank armor plates
-        ctx.fillStyle = this.owner === 'player' ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)';
+        // Draw armor plates if equipped
+        if (this.bodySprite.hasArmorPlates) {
+            this.drawArmorPlates(ctx, radius);
+        }
+    }
+    
+    drawEnergyField(ctx, radius) {
+        const props = this.bodySprite;
+        const time = Date.now() * 0.005;
+        
+        // Draw pulsing energy field
+        const pulseSize = 1 + Math.sin(time) * 0.1;
+        const fieldRadius = radius * 1.3 * pulseSize;
+        
+        ctx.save();
+        
+        // Create gradient for energy field
+        const gradient = ctx.createRadialGradient(0, 0, radius, 0, 0, fieldRadius);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        gradient.addColorStop(0.7, `rgba(${this.hexToRgb(props.energyColor).join(', ')}, 0.1)`);
+        gradient.addColorStop(1, `rgba(${this.hexToRgb(props.energyColor).join(', ')}, 0.3)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, fieldRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw energy field border
+        ctx.strokeStyle = props.energyColor;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = props.energyColor;
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, fieldRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+    
+    drawArmorPlates(ctx, radius) {
+        const props = this.bodySprite;
+        
+        // Draw main armor plates
+        ctx.fillStyle = props.armorColor;
         ctx.fillRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4);
         
-        // Draw armor plate lines
-        ctx.strokeStyle = this.owner === 'player' ? '#00ff00' : '#ff0000';
-        ctx.lineWidth = 1;
+        // Draw armor glow if present
+        if (props.armorGlow) {
+            ctx.strokeStyle = props.armorGlow;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = props.armorGlow;
+            ctx.shadowBlur = 3;
+        } else {
+            ctx.strokeStyle = this.owner === 'player' ? '#00ff00' : '#ff0000';
+            ctx.lineWidth = 1;
+        }
+        
         ctx.strokeRect(-radius * 0.7, -radius * 0.7, radius * 1.4, radius * 1.4);
+        ctx.shadowBlur = 0;
+        
+        // Draw extra armor plates if heavy armor
+        if (props.extraArmor) {
+            ctx.fillStyle = this.darkenColor(props.armorColor, 0.3);
+            ctx.fillRect(-radius * 0.5, -radius * 0.5, radius, radius);
+            
+            ctx.strokeStyle = props.armorGlow || this.owner === 'player' ? '#00ff00' : '#ff0000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-radius * 0.5, -radius * 0.5, radius, radius);
+        }
     }
     
     drawStunEffect(ctx, centerX, centerY, radius) {
@@ -384,15 +622,48 @@ class Tank {
     // Equipment methods
     equipWeapon(weapon) {
         this.equipment.weapon = weapon;
+        this.updateSprites();
     }
     
     equipArmor(armor) {
+        // Remove health bonus from previous armor if it exists
+        if (this.equipment.armor && this.equipment.armor.healthBonus) {
+            this.maxHealth -= this.equipment.armor.healthBonus;
+            this.health -= this.equipment.armor.healthBonus;
+        }
+        
+        // Equip new armor (or null to remove armor)
         this.equipment.armor = armor;
-        this.maxHealth += armor.healthBonus;
-        this.health += armor.healthBonus;
+        
+        // Add health bonus if armor is provided
+        if (armor && armor.healthBonus) {
+            this.maxHealth += armor.healthBonus;
+            this.health += armor.healthBonus;
+        }
+        
+        this.updateSprites();
     }
     
     // Utility methods
+    lightenColor(color, amount) {
+        const rgb = this.hexToRgb(color);
+        return `rgb(${Math.min(255, rgb[0] + amount * 255)}, ${Math.min(255, rgb[1] + amount * 255)}, ${Math.min(255, rgb[2] + amount * 255)})`;
+    }
+    
+    darkenColor(color, amount) {
+        const rgb = this.hexToRgb(color);
+        return `rgb(${Math.max(0, rgb[0] - amount * 255)}, ${Math.max(0, rgb[1] - amount * 255)}, ${Math.max(0, rgb[2] - amount * 255)})`;
+    }
+    
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? [
+            parseInt(result[1], 16),
+            parseInt(result[2], 16),
+            parseInt(result[3], 16)
+        ] : [0, 0, 0];
+    }
+    
     getDistanceTo(otherTank) {
         const dx = this.x - otherTank.x;
         const dy = this.y - otherTank.y;
@@ -425,7 +696,7 @@ class Tank {
         const moveX = this.x + (dx / distance) * 0.5;
         const moveY = this.y + (dy / distance) * 0.5;
         
-        if (this.maze.isValidPosition(moveX, moveY)) {
+        if (this.maze.isValidPosition(moveX, moveY, null)) {
             return { x: moveX, y: moveY };
         }
         

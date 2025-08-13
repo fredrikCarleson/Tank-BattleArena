@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tank Equipment Visual Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .test-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .tank-test {
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            background: #2a2a2a;
+            text-align: center;
+        }
+        
+        canvas {
+            border: 1px solid #555;
+            background: #000;
+        }
+        
+        .equipment-info {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ff00;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #00cc00;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tank Equipment Visual Test</h1>
+    
+    <div class="controls">
+        <button onclick="testBasicCannon()">Basic Cannon</button>
+        <button onclick="testHeavyCannon()">Heavy Cannon</button>
+        <button onclick="testMissileLauncher()">Missile Launcher</button>
+        <button onclick="testLaserCannon()">Laser Cannon</button>
+        <button onclick="testPlasmaCannon()">Plasma Cannon</button>
+        <br><br>
+        <button onclick="testLightArmor()">Light Armor</button>
+        <button onclick="testHeavyArmor()">Heavy Armor</button>
+        <button onclick="testReactiveArmor()">Reactive Armor</button>
+        <button onclick="testStealthArmor()">Stealth Armor</button>
+        <br><br>
+        <button onclick="testCombination()">Heavy Cannon + Heavy Armor</button>
+        <button onclick="testLaserStealth()">Laser + Stealth</button>
+    </div>
+    
+    <div class="test-container" id="test-container">
+        <!-- Tank tests will be added here -->
+    </div>
+
+    <script src="js/equipment.js"></script>
+    <script src="js/maze.js"></script>
+    <script src="js/tank.js"></script>
+    
+    <script>
+        const equipment = new Equipment();
+        const maze = new Maze(5, 5, 1);
+        let currentTest = null;
+        
+        function createTankTest(weaponId, armorId, title) {
+            const container = document.getElementById('test-container');
+            container.innerHTML = '';
+            
+            const testDiv = document.createElement('div');
+            testDiv.className = 'tank-test';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'equipment-info';
+            
+            testDiv.appendChild(canvas);
+            testDiv.appendChild(infoDiv);
+            container.appendChild(testDiv);
+            
+            // Create tank with specified equipment
+            const tank = new Tank(2, 2, 0, 'player', maze);
+            
+            if (weaponId) {
+                const weapon = equipment.getWeapon(weaponId);
+                tank.equipWeapon(weapon);
+            }
+            
+            if (armorId) {
+                const armor = equipment.getArmor(armorId);
+                tank.equipArmor(armor);
+            }
+            
+            // Render tank
+            const ctx = canvas.getContext('2d');
+            tank.render(ctx);
+            
+            // Update info
+            infoDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                Weapon: ${tank.equipment.weapon.name}<br>
+                Armor: ${tank.equipment.armor ? tank.equipment.armor.name : 'None'}<br>
+                Health: ${tank.health}/${tank.maxHealth}
+            `;
+            
+            currentTest = { tank, canvas, ctx };
+        }
+        
+        function testBasicCannon() {
+            createTankTest('basicCannon', null, 'Basic Cannon');
+        }
+        
+        function testHeavyCannon() {
+            createTankTest('heavyCannon', null, 'Heavy Cannon');
+        }
+        
+        function testMissileLauncher() {
+            createTankTest('missileLauncher', null, 'Missile Launcher');
+        }
+        
+        function testLaserCannon() {
+            createTankTest('laserCannon', null, 'Laser Cannon');
+        }
+        
+        function testPlasmaCannon() {
+            createTankTest('plasmaCannon', null, 'Plasma Cannon');
+        }
+        
+        function testLightArmor() {
+            createTankTest('basicCannon', 'lightArmor', 'Light Armor');
+        }
+        
+        function testHeavyArmor() {
+            createTankTest('basicCannon', 'heavyArmor', 'Heavy Armor');
+        }
+        
+        function testReactiveArmor() {
+            createTankTest('basicCannon', 'reactiveArmor', 'Reactive Armor');
+        }
+        
+        function testStealthArmor() {
+            createTankTest('basicCannon', 'stealthArmor', 'Stealth Armor');
+        }
+        
+        function testCombination() {
+            createTankTest('heavyCannon', 'heavyArmor', 'Heavy Cannon + Heavy Armor');
+        }
+        
+        function testLaserStealth() {
+            createTankTest('laserCannon', 'stealthArmor', 'Laser Cannon + Stealth Armor');
+        }
+        
+        // Start with basic cannon
+        testBasicCannon();
+        
+        // Animation loop for effects
+        function animate() {
+            if (currentTest) {
+                const ctx = currentTest.ctx;
+                ctx.clearRect(0, 0, currentTest.canvas.width, currentTest.canvas.height);
+                currentTest.tank.render(ctx);
+            }
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
